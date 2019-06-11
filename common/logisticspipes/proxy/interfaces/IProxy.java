@@ -52,7 +52,11 @@ public interface IProxy {
 
 	public void openFluidSelectGui(int slotId);
 
+<<<<<<< feature/custom-guide-book
 	public void openGuideBookGui(EnumHand hand);
+=======
+	public void openGuiFromItem(int guiId, EnumHand hand);
+>>>>>>> Remade some key parts
 
 	default void registerModels() {}
 
