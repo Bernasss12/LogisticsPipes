@@ -5,16 +5,23 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.EnumHand;
 <<<<<<< feature/custom-guide-book
+<<<<<<< feature/custom-guide-book
 import net.minecraft.util.ResourceLocation;
 
 import net.minecraftforge.fml.common.registry.GameRegistry;
 =======
 >>>>>>> Remade some key parts
+=======
+import net.minecraft.util.ResourceLocation;
+
+import net.minecraftforge.fml.common.registry.GameRegistry;
+>>>>>>> Formatting fixes
 
 import lombok.Getter;
 import lombok.Setter;
 import sun.rmi.runtime.Log;
 
+<<<<<<< feature/custom-guide-book
 <<<<<<< feature/custom-guide-book
 import logisticspipes.LPConstants;
 import logisticspipes.LPItems;
@@ -25,14 +32,17 @@ import logisticspipes.items.LogisticsItem;
 import logisticspipes.LogisticsPipes;
 import logisticspipes.items.ItemGuideBook;
 >>>>>>> Remade some key parts
+=======
+import logisticspipes.LPConstants;
+import logisticspipes.LPItems;
+import logisticspipes.LogisticsPipes;
+import logisticspipes.items.ItemGuideBook;
+import logisticspipes.items.LogisticsItem;
+>>>>>>> Formatting fixes
 import logisticspipes.network.abstractpackets.ModernPacket;
 import logisticspipes.utils.StaticResolve;
 import network.rs485.logisticspipes.util.LPDataInput;
 import network.rs485.logisticspipes.util.LPDataOutput;
-
-/**
- * TODO make this right
- */
 
 @StaticResolve
 public class SetCurrentPagePacket extends ModernPacket {
@@ -57,6 +67,7 @@ public class SetCurrentPagePacket extends ModernPacket {
 	public void processPacket(EntityPlayer player) {
 		ItemStack book;
 <<<<<<< feature/custom-guide-book
+<<<<<<< feature/custom-guide-book
 		book = player.getHeldItem(hand);
 		if (book.getItem() != LPItems.itemGuideBook) return;
 		NBTTagCompound nbt = book.getTagCompound();
@@ -72,6 +83,10 @@ public class SetCurrentPagePacket extends ModernPacket {
 			if (!(player.getHeldItemOffhand().getItem().getClass() == ItemGuideBook.class)) return;
 			book = player.getHeldItemOffhand();
 		}
+=======
+		book = player.getHeldItem(hand);
+		if (book.getItem() != LPItems.itemGuideBook) return;
+>>>>>>> Formatting fixes
 		NBTTagCompound nbt = book.getTagCompound();
 		nbt.setFloat("sliderProgress", sliderProgress);
 		nbt.setInteger("page", page);
