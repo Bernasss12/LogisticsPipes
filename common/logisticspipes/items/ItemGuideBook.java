@@ -1,5 +1,7 @@
 package logisticspipes.items;
 
+import java.util.ArrayList;
+
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
@@ -19,8 +21,15 @@ public class ItemGuideBook extends LogisticsItem {
 		this.setMaxStackSize(1);
 	}
 
-	public static void setCurrentPage(GuiGuideBook.SavedTab page, EnumHand hand) {
-		MainProxy.sendPacketToServer(PacketHandler.getPacket(SetCurrentPagePacket.class).setHand(hand).setSliderProgress(page.getProgress()).setPage(page.getPage()).setChapter(page.getChapter()).setDivision(page.getDivision()));
+	public static void setCurrentPage(GuiGuideBook.SavedTab page, GuiGuideBook gui, ArrayList<GuiGuideBook.SavedTab> tabs, EnumHand hand) {
+		MainProxy.sendPacketToServer(PacketHandler.getPacket(SetCurrentPagePacket.class)
+				.setHand(hand)
+				.setSliderProgress(page.getProgress())
+				.setPage(page.getPage())
+				.setChapter(page.getChapter())
+				.setDivision(page.getDivision())
+				.setSavedTabs(tabs)
+				.setGui(gui));
 	}
 
 	@Override
