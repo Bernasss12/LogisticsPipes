@@ -119,7 +119,7 @@ public class ModuleQuickSort extends LogisticsGuiModule {
 						count = Math.min(count, reply.getValue2().maxNumberOfItems);
 					}
 					ItemStack stackToSend = invUtil.getMultipleItems(item.getKey(), count);
-					if (stackToSend == null || stackToSend.isEmpty()) {
+					if (stackToSend.isEmpty()) {
 						break;
 					}
 
@@ -164,7 +164,7 @@ public class ModuleQuickSort extends LogisticsGuiModule {
 
 			ItemStack slot = invUtil.getStackInSlot(lastStackLookedAt);
 
-			while (slot == null) {
+			while (slot.isEmpty()) {
 				lastStackLookedAt++;
 				if (lastStackLookedAt >= invUtil.getSizeInventory()) {
 					lastStackLookedAt = 0;
@@ -218,14 +218,16 @@ public class ModuleQuickSort extends LogisticsGuiModule {
 				jamList.add(reply.getValue1());
 				reply = _service.hasDestination(ItemIdentifier.get(slot), false, jamList);
 			}
-			ItemStack returned = null;
+
 			int amountToExtract = sizePrev - slot.getCount();
 			if (!slot.isEmpty()) {
 				partialSend = true;
 			}
-			returned = invUtil.decrStackSize(lastStackLookedAt, amountToExtract);
+
+			ItemStack returned = invUtil.decrStackSize(lastStackLookedAt, amountToExtract);
 			if (returned.getCount() != amountToExtract) {
-				throw new UnsupportedOperationException("Couldn't extract the already sended items from the inventory.");
+				// item duplication prevention
+				throw new UnsupportedOperationException("Couldn't extract the items already sent from the inventory");
 			}
 
 			lastSuceededStack = lastStackLookedAt;
@@ -237,7 +239,7 @@ public class ModuleQuickSort extends LogisticsGuiModule {
 				}
 				while (lastStackLookedAt != lastSuceededStack) {
 					ItemStack tstack = invUtil.getStackInSlot(lastStackLookedAt);
-					if (tstack != null && !slot.isItemEqual(tstack)) {
+					if (!tstack.isEmpty() && !slot.isItemEqual(tstack)) {
 						break;
 					}
 					lastStackLookedAt++;

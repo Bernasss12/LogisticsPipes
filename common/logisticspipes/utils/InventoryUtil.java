@@ -12,15 +12,15 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import javax.annotation.Nonnull;
+
+import net.minecraft.item.ItemStack;
+
+import net.minecraftforge.items.IItemHandler;
 
 import logisticspipes.interfaces.IInventoryUtil;
 import logisticspipes.interfaces.ISpecialInsertion;
 import logisticspipes.utils.item.ItemIdentifier;
-
-import net.minecraft.inventory.IInventory;
-import net.minecraft.item.ItemStack;
-
-import net.minecraftforge.items.IItemHandler;
 
 public class InventoryUtil implements IInventoryUtil, ISpecialInsertion {
 
@@ -91,16 +91,16 @@ public class InventoryUtil implements IInventoryUtil, ISpecialInsertion {
 	}
 
 	@Override
-	public ItemStack getSingleItem(ItemIdentifier item) {
+	public @Nonnull ItemStack getSingleItem(ItemIdentifier item) {
 		return getMultipleItems(item, 1);
 	}
 
 	@Override
-	public ItemStack getMultipleItems(ItemIdentifier item, int count) {
+	public @Nonnull ItemStack getMultipleItems(ItemIdentifier item, int count) {
 		if (itemCount(item) < count) {
-			return null;
+			return ItemStack.EMPTY;
 		}
-		ItemStack outputStack = null;
+		ItemStack outputStack = ItemStack.EMPTY;
 		boolean first = true;
 
 		for (int i = _cropStart; i < _inventory.getSlots() - _cropEnd && count > 0; i++) {
@@ -114,7 +114,7 @@ public class InventoryUtil implements IInventoryUtil, ISpecialInsertion {
 				continue;
 			}
 			ItemStack removed = _inventory.extractItem(i, itemsToSplit, false);
-			if (outputStack == null) {
+			if (outputStack.isEmpty()) {
 				outputStack = removed;
 			} else {
 				outputStack.setCount(outputStack.getCount() + removed.getCount());
@@ -156,22 +156,17 @@ public class InventoryUtil implements IInventoryUtil, ISpecialInsertion {
 	}
 
 	@Override
-	public boolean isSpecialInventory() {
-		return false;
-	}
-
-	@Override
 	public int getSizeInventory() {
 		return _inventory.getSlots();
 	}
 
 	@Override
-	public ItemStack getStackInSlot(int i) {
+	public @Nonnull ItemStack getStackInSlot(int i) {
 		return _inventory.getStackInSlot(i);
 	}
 
 	@Override
-	public ItemStack decrStackSize(int i, int j) {
+	public @Nonnull ItemStack decrStackSize(int i, int j) {
 		return _inventory.extractItem(i, j, false);
 	}
 
