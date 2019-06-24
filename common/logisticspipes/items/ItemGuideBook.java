@@ -11,6 +11,7 @@ import net.minecraft.util.EnumHand;
 import net.minecraft.world.World;
 
 import logisticspipes.gui.guidebook.GuiGuideBook;
+import logisticspipes.gui.guidebook.book.SavedTab;
 import logisticspipes.network.PacketHandler;
 import logisticspipes.network.packets.SetCurrentPagePacket;
 import logisticspipes.proxy.MainProxy;
@@ -21,15 +22,14 @@ public class ItemGuideBook extends LogisticsItem {
 		this.setMaxStackSize(1);
 	}
 
-	public static void setCurrentPage(GuiGuideBook.SavedTab page, GuiGuideBook gui, ArrayList<GuiGuideBook.SavedTab> tabs, EnumHand hand) {
+	public static void setCurrentPage(SavedTab page, ArrayList<SavedTab> tabs, EnumHand hand) {
 		MainProxy.sendPacketToServer(PacketHandler.getPacket(SetCurrentPagePacket.class)
 				.setHand(hand)
 				.setSliderProgress(page.getProgress())
 				.setPage(page.getPage())
 				.setChapter(page.getChapter())
 				.setDivision(page.getDivision())
-				.setSavedTabs(tabs)
-				.setGui(gui));
+				.setSavedTabs(tabs));
 	}
 
 	@Override
