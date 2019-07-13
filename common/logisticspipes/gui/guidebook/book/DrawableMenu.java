@@ -1,5 +1,7 @@
 package logisticspipes.gui.guidebook.book;
 
+import java.awt.Color;
+
 import net.minecraft.client.Minecraft;
 
 import logisticspipes.gui.guidebook.GuiGuideBook;
@@ -17,7 +19,8 @@ public class DrawableMenu implements IDrawable {
 		mouseX = mouseX < gui.getGuiX0() || mouseX > gui.getGuiX3() ? 0 : mouseX;
 		mouseY = mouseY < gui.getGuiY0() || mouseY > gui.getGuiY3() ? 0 : mouseY;
 		for (GuideBookContents.Division div : gui.gbc.getDivisions()) {
-			gui.drawMenuText(mc, gui.getAreaX0(), gui.getAreaY0() + areaCurrentY + yOffset, gui.getAreaAcrossX(), 19, div.getTitle());
+			//gui.drawMenuText(mc, gui.getAreaX0(), gui.getAreaY0() + areaCurrentY + yOffset, gui.getAreaAcrossX(), 19, div.getTitle());
+			gui.fr.drawString(div.getTitle(), gui.getAreaX0(), gui.getAreaY0() + areaCurrentY + yOffset, new Color(0xffffffff));
 			areaCurrentY += 20;
 			for (int chapterIndex = 0; chapterIndex < div.getChapters().size(); chapterIndex++) {
 				gui.divisionsList.get(div.getDindex()).getList().get(chapterIndex).drawMenuItem(mc, mouseX, mouseY, gui.getAreaX0() + (chapterIndex % gui.getTileMax() * (gui.getTileSize() + gui.getTileSpacing())), gui.getAreaY0() + areaCurrentY + yOffset, gui.getTileSize(), gui.getTileSize(), false);

@@ -30,6 +30,7 @@ import logisticspipes.gui.guidebook.book.MenuItem;
 import logisticspipes.gui.guidebook.book.SavedTab;
 import logisticspipes.items.ItemGuideBook;
 import logisticspipes.utils.GuideBookContents;
+import logisticspipes.utils.font.LPFontRenderer;
 
 public class GuiGuideBook extends GuiScreen {
 
@@ -74,6 +75,7 @@ public class GuiGuideBook extends GuiScreen {
 	public static DrawablePage page;
 	public static DrawableMenu menu;
 	private static String title;
+	public LPFontRenderer fr;
 
 	// Book Experimental variables
 	private EnumHand hand;
@@ -229,7 +231,7 @@ public class GuiGuideBook extends GuiScreen {
 	public void drawScreen(int mouseX, int mouseY, float partialTicks) {
 		this.mouseX = mouseX;
 		this.mouseY = mouseY;
-		this.drawTransparentOverlay();
+		//this.drawTransparentOverlay();
 		this.drawCurrentEvent();
 		slider.enabled = areaCurrentlyDrawnY > areaAcrossY;
 		super.drawScreen(mouseX, mouseY, partialTicks);
@@ -243,6 +245,7 @@ public class GuiGuideBook extends GuiScreen {
 	public void initGui() {
 		if (!loadedNBT) loadedNBT = this.getDataFromNBT();
 		this.calculateConstraints();
+		this.fr = new LPFontRenderer(mc, "terminus");
 		this.title = this.updateTitle();
 		this.slider = this.addButton(new GuiGuideBookSlider(0, guiSliderX, guiSliderY0, guiSliderY1, zTitleButtons, currentPage.getProgress(), guiSliderWidth, guiSliderHeight));
 		this.slider.enabled = false;

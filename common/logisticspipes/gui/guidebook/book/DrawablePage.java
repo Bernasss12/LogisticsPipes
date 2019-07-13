@@ -1,5 +1,6 @@
 package logisticspipes.gui.guidebook.book;
 
+import java.awt.Color;
 import java.util.ArrayList;
 
 import net.minecraft.client.Minecraft;
@@ -46,7 +47,9 @@ public class DrawablePage implements IDrawable {
 				GlStateManager.popMatrix();
 				areaCurrentY += (int) (10 * HEADER_SCALING);
 			} else {
-				mc.fontRenderer.drawString(previousFormat + line + TextFormatting.RESET, gui.getAreaX0(), gui.getAreaY0() + areaCurrentY + yOffset, 0xFFFFFF);
+				//mc.fontRenderer.drawString(previousFormat + line + TextFormatting.RESET, gui.getAreaX0(), gui.getAreaY0() + areaCurrentY + yOffset, 0xFFFFFF);
+				GlStateManager.translate(0, 0, 25);
+				gui.fr.drawString(line, gui.getAreaX0(), gui.getAreaY0() + areaCurrentY + yOffset, new Color(0xFFFFFFFF));
 				lastFormatIndex = 0;
 				for (TextFormatting format : TextFormatting.values()) {
 					if (line.lastIndexOf(format.toString()) > lastFormatIndex) {
