@@ -1,5 +1,6 @@
 package logisticspipes.gui.guidebook;
 
+import java.awt.Point;
 import java.io.IOException;
 import java.util.ArrayList;
 
@@ -245,7 +246,7 @@ public class GuiGuideBook extends GuiScreen {
 	public void initGui() {
 		if (!loadedNBT) loadedNBT = this.getDataFromNBT();
 		this.calculateConstraints();
-		this.fr = new LPFontRenderer(mc, "terminus");
+		this.fr = new LPFontRenderer(mc, "minecraft-plain");
 		this.title = this.updateTitle();
 		this.slider = this.addButton(new GuiGuideBookSlider(0, guiSliderX, guiSliderY0, guiSliderY1, zTitleButtons, currentPage.getProgress(), guiSliderWidth, guiSliderHeight));
 		this.slider.enabled = false;

@@ -49,7 +49,7 @@ public class DrawablePage implements IDrawable {
 			} else {
 				//mc.fontRenderer.drawString(previousFormat + line + TextFormatting.RESET, gui.getAreaX0(), gui.getAreaY0() + areaCurrentY + yOffset, 0xFFFFFF);
 				GlStateManager.translate(0, 0, 25);
-				gui.fr.drawString(line, gui.getAreaX0(), gui.getAreaY0() + areaCurrentY + yOffset, new Color(0xFFFFFFFF));
+				gui.fr.stringDraw(line, gui.getAreaX0(), gui.getAreaY0() + areaCurrentY + yOffset, new Color(0xFFFFFFFF));
 				lastFormatIndex = 0;
 				for (TextFormatting format : TextFormatting.values()) {
 					if (line.lastIndexOf(format.toString()) > lastFormatIndex) {

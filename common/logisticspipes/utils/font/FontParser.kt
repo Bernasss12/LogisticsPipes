@@ -122,7 +122,7 @@ object FontParser {
                 "SIZE", "STARTPROPERTIES", "FONT_ASCENT", "FONT_DESCENT", "CAP_HEIGHT",
                 "COPYRIGHT", "FACE_NAME", "FONT", "FONT_VERSION", "FOUNDRY", "FAMILY_NAME",
                 "NOTICE", "POINT_SIZE", "RESOLUTION_X", "RESOLUTION_Y", "SLANT",
-                "WEIGHT_NAME", "X_HEIGHT", "ENDPROPERTIES" -> Unit
+                "WEIGHT_NAME", "X_HEIGHT", "ENDPROPERTIES", "COMMENT" -> Unit
 
                 "DEFAULT_CHAR" -> defaultChar = tokens[1].toInt().toChar()
 
