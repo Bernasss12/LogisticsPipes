@@ -300,7 +300,7 @@ public class GuiGuideBook extends GuiScreen {
 	}
 
 	private void tryRemoveTab(GuiGuideBookTabButton tab) {
-		//tabList.remove(tab);
+		tabList.remove(tab);
 		updateButtonVisibility();
 	}
 

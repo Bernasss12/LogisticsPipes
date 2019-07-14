@@ -50,12 +50,13 @@ public class LPFontRenderer {
 		double y0 = y + glyph.getHeight() + glyph.getOffsetY();
 		double x1 = x + glyph.getWidth() + glyph.getOffsetX();
 		double y1 = y + glyph.getOffsetY();
-		double u0 = 0.0D;
-		double v0 = textureY;
-		double u1 = glyph.getWidth();
-		double v1 = textureY + glyph.getHeight();
+		double u0 = (0.0D) / width;
+		double v0 = (textureY) / height;
+		double u1 = (glyph.getWidth()) / width;
+		double v1 = (textureY + glyph.getHeight()) / height;
 		double italicsOffset = italics ? 2.0 : 0.0;
 		GlStateManager.bindTexture(wrapper.getTextures().get(texIndex));
+		GlStateManager.enableTexture2D();
 		GlStateManager.enableAlpha();
 		GlStateManager.enableBlend();
 		GlStateManager.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
@@ -84,7 +85,7 @@ public class LPFontRenderer {
 			lineDrawHorizontal(x, y - ((glyph.getHeight() + glyph.getOffsetY()) / 2), glyph.getDWidthX(), 1, color);
 		}
 		if (underline) {
-			lineDrawHorizontal(x , y, wrapper.getGlyphY(c), 1, color);
+			lineDrawHorizontal(x, y, glyph.getDWidthX(), 1, color);
 		}
 		return draw(c, x, y, color, wrapper, italics);
 	}
