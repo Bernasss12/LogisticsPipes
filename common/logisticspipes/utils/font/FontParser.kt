@@ -8,8 +8,6 @@ object FontParser {
 
     fun read(resourceLocation: ResourceLocation) = read(Minecraft.getMinecraft().resourceManager.getResource(resourceLocation).inputStream.bufferedReader().use { it.readLines() })
 
-
-
     fun read(lines: List<String>): BDF {
         val parser = LineParser();
         lines.asSequence().filter { it.isNotBlank() }.withIndex().forEach { (index, line) -> parser.line(index, line) }
@@ -176,7 +174,7 @@ object FontParser {
         enum class Char : IState {
             Pre, //        (Starts @CHARS, Ends @STARTCHAR) // Is set before every STARTCHAR
             Definition, // (Starts @STARTCHAR, Ends @BITMAP) // Is set while setting the char's properties
-            Bitmap, //    (Starts @BITMAP, Ends @ENDCHAR) // Is set while setting the bitmap
+            Bitmap, //     (Starts @BITMAP, Ends @ENDCHAR) // Is set while setting the bitmap
         }
     }
 

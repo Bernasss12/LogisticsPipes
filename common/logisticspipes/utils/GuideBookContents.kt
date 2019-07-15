@@ -61,7 +61,7 @@ class GuideBookContents private constructor(val lang: String, val divisions: Lis
             try {
                 val res = rm.getResource(ResourceLocation(LPConstants.LP_MOD_ID, "book/$lang/$par/$cha/page$index"))
                 res.use {
-                    val text = res.inputStream.bufferedReader().readLines().joinToString("\n")
+                    val text = res.inputStream.bufferedReader().readLines().joinToString("")
                     return Page(dindex, cindex, index, text)
                 }
             } catch (e: IOException) {
