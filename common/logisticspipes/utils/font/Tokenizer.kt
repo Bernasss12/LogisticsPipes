@@ -4,114 +4,154 @@ package logisticspipes.utils.font
  * TODO (This will not be pushed to the main repo, it is merely for personal tracking :P)
  *  - Add cases for underlined and for strikethrough
  *  - Add Image, Link and Color parsing
+ *  - Add Item Translated name support
  */
 
 object Tokenizer {
     fun tokenize(str: String): Array<Token> {
-        var expecting = mutableListOf<Expecting>()
+        var current = mutableListOf<Current>()
         var tokens = mutableListOf<Token>()
-        var strc = str.toCharArray()
-        var tags = mutableListOf<TokenTag>()
+        var strC = str.toCharArray()
         var string = StringBuilder()
-        strc.forEachIndexed { index, c ->
+        strC.forEachIndexed { index, c ->
             when (c) {
-                ' ' -> { // To ease text wrapping in the future the text breaks into a new token every new space character.
-                    string.append(c)
-                    if (tags.isEmpty()) tokens.add(Token(string.toString(), mutableListOf(TokenTag.Plain)))
-                    else if (string.isNotEmpty()) tokens.add(Token(string.toString(), tags.toMutableList()))
-                    string.clear()
-                }
-                '_' -> {
-                    if (index != strc.lastIndex && strc[index + 1] == '_') // If next character is the same just ignore it and deal with it retroactively
-                    else if (index != 0 && strc[index - 1] == '_') { // If the character before is equal to this one treat as a Bold token
-                        if (expecting.indexOf(Tokenizer.Expecting.BoldUnderscore) != -1) { // If a Bold statement was already started end it here
-                            if (string.isNotEmpty()) tokens.add(Token(string.toString(), tags.toMutableList()))
-                            if (expecting.contains(Tokenizer.Expecting.BoldUnderscore)) expecting.remove(Expecting.BoldUnderscore)
-                            if (tags.contains(TokenTag.Bold)) tags.remove(TokenTag.Bold)
-                            string.clear()
-                        } else { // If no Bold statement is started at this point, start a new one.
-                            if (tags.isEmpty() && string.isNotEmpty()) tokens.add(Token(string.toString(), mutableListOf(TokenTag.Plain)))
-                            else if (string.isNotEmpty()) tokens.add(Token(string.toString(), tags.toMutableList()))
-                            expecting.add(Tokenizer.Expecting.BoldUnderscore)
-                            if (!tags.contains(TokenTag.Bold)) tags.add(TokenTag.Bold)
-                            string.clear()
-                        }
-                    } else if (index != 0 && strc[index - 1] != '_') { // If previous character is not an underscore, and the next one isn't either treat this as an Italic token
-                        if (expecting.indexOf(Tokenizer.Expecting.ItalicUnderscore) != -1) { // If a Italic statement was already started end it here
-                            if (string.isNotEmpty()) tokens.add(Token(string.toString(), tags.toMutableList()))
-                            if (expecting.contains(Tokenizer.Expecting.ItalicUnderscore)) expecting.remove(Expecting.ItalicUnderscore)
-                            if (tags.contains(TokenTag.Italic)) tags.remove(TokenTag.Italic)
-                            string.clear()
-                        } else { // If no Italic statement is started at this point, start a new one.
-                            if (tags.isEmpty() && string.isNotEmpty()) tokens.add(Token(string.toString(), mutableListOf(TokenTag.Plain)))
-                            else if (string.isNotEmpty()) tokens.add(Token(string.toString(), tags.toMutableList()))
-                            expecting.add(Tokenizer.Expecting.ItalicUnderscore)
-                            if (!tags.contains(TokenTag.Italic)) tags.add(TokenTag.Italic)
-                            string.clear()
-                        }
-                    } else string.append(c)
-                }
-                '*' -> { // This is the same as the previous Case but using Asterisks instead of Underscores
-                    if (index != strc.lastIndex && strc[index + 1] == '*')
-                    else if (index != 0 && strc[index - 1] == '*') {
-                        if (expecting.indexOf(Tokenizer.Expecting.BoldAsterisk) != -1) {
-                            if (string.isNotEmpty()) tokens.add(Token(string.toString(), tags.toMutableList()))
-                            if (expecting.contains(Tokenizer.Expecting.BoldAsterisk)) expecting.remove(Expecting.BoldAsterisk)
-                            if (tags.contains(TokenTag.Bold)) tags.remove(TokenTag.Bold)
-                            string.clear()
-                        } else {
-                            if (tags.isEmpty() && string.isNotEmpty()) tokens.add(Token(string.toString(), mutableListOf(TokenTag.Plain)))
-                            else if (string.isNotEmpty()) tokens.add(Token(string.toString(), tags.toMutableList()))
-                            expecting.add(Tokenizer.Expecting.BoldAsterisk)
-                            if (!tags.contains(TokenTag.Bold)) tags.add(TokenTag.Bold)
-                            string.clear()
-                        }
-                    } else if (index != 0 && strc[index - 1] != '*') {
-                        if (expecting.indexOf(Tokenizer.Expecting.ItalicAsterisk) != -1) {
-                            if (string.isNotEmpty()) tokens.add(Token(string.toString(), tags.toMutableList()))
-                            if (expecting.contains(Tokenizer.Expecting.ItalicAsterisk)) expecting.remove(Expecting.ItalicAsterisk)
-                            if (tags.contains(TokenTag.Italic)) tags.remove(TokenTag.Italic)
-                            string.clear()
-                        } else {
-                            if (tags.isEmpty() && string.isNotEmpty()) tokens.add(Token(string.toString(), mutableListOf(TokenTag.Plain)))
-                            else if (string.isNotEmpty()) tokens.add(Token(string.toString(), tags.toMutableList()))
-                            expecting.add(Tokenizer.Expecting.ItalicAsterisk)
-                            if (!tags.contains(TokenTag.Italic)) tags.add(TokenTag.Italic)
-                            string.clear()
-                        }
-                    } else string.append(c)
-                }
-                else -> { // If the character isn't one of the special cases, just add it to the buffer
-                    string.append(c)
-                    if(index == strc.lastIndex) tokens.add(Token(string.toString(), tags)) // And also if it happens to be the last character on the string might as well add the buffer as a token.
-                }
+                '_', '*' -> string.handleAsteriskAndUnderscore(c, index, tokens, current, strC)
+                else -> string.handleDefault(c, index, tokens, current, strC)
             }
         }
         return tokens.toTypedArray()
     }
 
+    private fun StringBuilder.handleBold(c: Char, tokens: MutableList<Token>, current: MutableList<Current>, strC: CharArray) {
+        fun opener() {
+            this.deleteCharAt(this.lastIndex)
+            if (this.isNotEmpty()) tokens.add(Token(this.toString(), current.toTokenTagList()))
+            current.add(Current.Bold)
+            this.clear()
+        }
+
+        fun closer() {
+            this.deleteCharAt(this.lastIndex)
+            if (this.isNotEmpty()) tokens.add(Token(this.toString(), current.toTokenTagList()))
+            current.remove(Current.Bold)
+            this.clear()
+        }
+
+        if (!current.contains(Tokenizer.Current.Bold)) opener() else closer()
+    }
+
+    private fun StringBuilder.handleItalic(c: Char, tokens: MutableList<Token>, current: MutableList<Current>, strC: CharArray) {
+        fun opener() {
+            if (this.isNotEmpty()) tokens.add(Token(this.toString(), current.toTokenTagList()))
+            current.add(Current.Italic)
+            this.clear()
+        }
+
+        fun closer() {
+            if (this.isNotEmpty()) tokens.add(Token(this.toString(), current.toTokenTagList()))
+            current.remove(Current.Italic)
+            this.clear()
+        }
+
+        if (!current.contains(Tokenizer.Current.Italic)) opener() else closer()
+    }
+
+    private fun StringBuilder.handleAsteriskAndUnderscore(c: Char, index: Int, tokens: MutableList<Token>, current: MutableList<Current>, strC: CharArray) {
+        when (strC.nextChar(index)) {
+            c -> handleDefault(c, index, tokens, current, strC)
+            else -> {
+                when (strC.prevChar(index)) {
+                    c -> handleBold(c, tokens, current, strC)
+                    else -> handleItalic(c, tokens, current, strC)
+                }
+            }
+        }
+    }
+
+    /*
+     Handler for the default case:
+     Runs if no Markdown tags are detected within the current character and the ones before and after.
+     */
+    private fun StringBuilder.handleDefault(c: Char, index: Int, tokens: MutableList<Token>, current: MutableList<Current>, strC: CharArray) {
+        if (c != '\\') this.append(c)
+        else if (strC.prevChar(index) == '\\') this.append(c)
+        if (index == strC.lastIndex || c == ' ') {
+            tokens.add(Token(this.toString(), current.toTokenTagList()))
+            this.clear()
+        }
+    }
+
+    /*
+     Turns a workable MutableList of Current classes into a List of TokenTags, only really used to put into Tokens
+     */
+    private fun MutableList<Current>.toTokenTagList(): List<TokenTag> {
+        var list = listOf<TokenTag>()
+        this.forEach { list += it.toTokenTag() }
+        return list
+    }
+
+    /*
+     Returns the next Char in the array:
+     If the previous index is out of bounds returns an indifferent character, in this case: ' '
+     If said character was escaped using '\' the function returns the same indifferent character as before.
+     */
+    private fun CharArray.prevChar(index: Int): Char {
+        if (index == 0) return ' '
+        if ((index - 1 != 0) && this[index - 2] == '\\') return ' '
+        return this[index - 1]
+    }
+
+    /*
+    Returns the next Char in the array:
+    If the next index is out of bounds returns an indifferent character, in this case: ' '
+    */
+    private fun CharArray.nextChar(index: Int): Char {
+        if (index == this.lastIndex) return ' '
+        return this[index + 1]
+    }
+
+    /*
+     Token that has the token text as well as all the formatting tags associated with that text.
+     */
     class Token(val str: String, val tags: List<TokenTag>) {
         fun contains(str: String): Boolean {
-            if (tags.contains(str.toTokenTag()) != null && tags.contains(str.toTokenTag())) return true
+            if (tags.contains(str.toTokenTag())) return true
             return false
         }
     }
 
-    enum class Expecting {
-        ItalicUnderscore,
-        ItalicAsterisk,
-        BoldUnderscore,
-        BoldAsterisk
+    /*
+     Used to keep track of the currently opened markdown tags, and to know what to expect.
+     It is a sealed class instead of an enum class because this way I can store the used char in case some tag can be set by multiple tags.
+     */
+    enum class Current {
+        Italic {
+            override fun toTokenTag(): TokenTag {
+                return Tokenizer.TokenTag.Italic
+            }
+        },
+        Bold {
+            override fun toTokenTag(): TokenTag {
+                return Tokenizer.TokenTag.Bold
+            }
+        };
+
+        abstract fun toTokenTag(): TokenTag
     }
 
+    /*
+     Used to track the tags a token has so the renderer knows how to draw said token.
+     This is also a sealed class instead of an enum class because this way I can store the linked page in the Link tag as well as an image in an Image tag, for example.
+     */
     sealed class TokenTag {
-        object Plain : TokenTag()
         object Italic : TokenTag()
         object Bold : TokenTag()
     }
 
+    /*
+     This may end up being changed if I find another solution but this is meant to turn a string into a matching TokenTag
+     */
     fun String.toTokenTag(): TokenTag? = when (this) {
-        "Plain" -> Tokenizer.TokenTag.Plain
         "Italic" -> Tokenizer.TokenTag.Italic
         "Bold" -> Tokenizer.TokenTag.Bold
         else -> null

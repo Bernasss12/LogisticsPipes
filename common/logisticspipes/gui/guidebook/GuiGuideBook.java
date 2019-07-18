@@ -246,7 +246,7 @@ public class GuiGuideBook extends GuiScreen {
 	public void initGui() {
 		if (!loadedNBT) loadedNBT = this.getDataFromNBT();
 		this.calculateConstraints();
-		this.fr = new LPFontRenderer(mc, "minecraft");
+		this.fr = new LPFontRenderer(mc, "minecraft"); //Todo only perform this once
 		this.title = this.updateTitle();
 		this.slider = this.addButton(new GuiGuideBookSlider(0, guiSliderX, guiSliderY0, guiSliderY1, zTitleButtons, currentPage.getProgress(), guiSliderWidth, guiSliderHeight));
 		this.slider.enabled = false;
