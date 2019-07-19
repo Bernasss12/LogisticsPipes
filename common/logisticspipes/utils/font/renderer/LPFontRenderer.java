@@ -1,7 +1,6 @@
-package logisticspipes.utils.font;
+package logisticspipes.utils.font.renderer;
 
 import java.awt.Color;
-import java.util.List;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BufferBuilder;
@@ -13,6 +12,9 @@ import net.minecraft.util.ResourceLocation;
 import org.lwjgl.opengl.GL11;
 
 import logisticspipes.LPConstants;
+import logisticspipes.utils.font.BDF;
+import logisticspipes.utils.font.FontParser;
+import logisticspipes.utils.font.FontWrapper;
 
 public class LPFontRenderer {
 
@@ -59,9 +61,9 @@ public class LPFontRenderer {
 		double v0 = (textureY) / (double) height;
 		double u1 = (glyph.getWidth()) / (double) width;
 		double v1 = (textureY + glyph.getHeight()) / (double) height;
-		double italicsOffset = italics ? 1.0 : 0.0;
+		double italicsOffset = italics ? (glyph.getHeight() * Math.tan(0.2181662D)) : 0.0D;
 		GlStateManager.bindTexture(wrapper.getTextures().get(texIndex));
-		//GlStateManager.enableTexture2D();
+		GlStateManager.enableTexture2D();
 		GlStateManager.enableAlpha();
 		GlStateManager.enableBlend();
 		GlStateManager.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
@@ -71,20 +73,20 @@ public class LPFontRenderer {
 		buffer.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_TEX_COLOR);
 		// Buffer vertex setting
 		buffer.pos(x0 + italicsOffset, y0, 15.0D).tex(u0, v0).color(color.getRed(), color.getGreen(), color.getBlue(), color.getAlpha()).endVertex();
-		buffer.pos(x0 - italicsOffset, y1, 15.0D).tex(u0, v1).color(color.getRed(), color.getGreen(), color.getBlue(), color.getAlpha()).endVertex();
-		buffer.pos(x1 - italicsOffset, y1, 15.0D).tex(u1, v1).color(color.getRed(), color.getGreen(), color.getBlue(), color.getAlpha()).endVertex();
+		buffer.pos(x0, y1, 15.0D).tex(u0, v1).color(color.getRed(), color.getGreen(), color.getBlue(), color.getAlpha()).endVertex();
+		buffer.pos(x1, y1, 15.0D).tex(u1, v1).color(color.getRed(), color.getGreen(), color.getBlue(), color.getAlpha()).endVertex();
 		buffer.pos(x1 + italicsOffset, y0, 15.0D).tex(u1, v0).color(color.getRed(), color.getGreen(), color.getBlue(), color.getAlpha()).endVertex();
 		tessellator.draw();
 		GlStateManager.disableAlpha();
 		return glyph.getDWidthX();
 	}
 
-	protected int width(char c, FontWrapper wrapper) {
+	protected int width(char c, FontWrapper wrapper, boolean italics) {
 		BDF.IGlyph glyph = wrapper.getGlyph(c);
 		return glyph != null ? glyph.getDWidthX() : 0;
 	}
 
-	private int charDraw(char c, int x, int y, Color color, FontWrapper wrapper, boolean underline, boolean strikethrough, boolean italics) {
+	private int drawChar(char c, int x, int y, Color color, FontWrapper wrapper, boolean underline, boolean strikethrough, boolean italics, boolean shadow) {
 		BDF.IGlyph glyph = wrapper.getGlyph(c);
 		if (strikethrough) {
 			lineDrawHorizontal(x, y - 3, glyph.getDWidthX(), 1, color);
@@ -92,27 +94,53 @@ public class LPFontRenderer {
 		if (underline) {
 			lineDrawHorizontal(x, y + 1, glyph.getDWidthX(), 1, color);
 		}
+		if (shadow) {
+			draw(c, x + 1, y + 1, color, wrapper, italics);
+		}
 		return draw(c, x, y, color, wrapper, italics);
 	}
 
-	public int stringDraw(String string, int x, int y, Color color, FontWrapper wrapper, boolean underline, boolean strikethrough, boolean italics) {
+	public int drawString(String string, int x, int y, Color color, FontWrapper wrapper, boolean underline, boolean strikethrough, boolean italics) {
 		int xOffset = 0;
 		for (char c : string.toCharArray()) {
-			xOffset += charDraw(c, x + xOffset, y, color, wrapper, underline, strikethrough, italics);
+			xOffset += drawChar(c, x + xOffset, y, color, wrapper, underline, strikethrough, italics, false);
+		}
+		return xOffset + (italics ? 2: 0);
+	}
+
+	public int widthString(String string, FontWrapper wrapper, boolean italics){
+		int xOffset = 0;
+		for (char c : string.toCharArray()){
+			xOffset = width(c, wrapper, italics);
 		}
 		return xOffset;
 	}
 
-	public int drawTokens(Tokenizer.Token[] tokens, int x, int y, Color defaultColor){
+	public int stringDrawWithShadow(String string, int x, int y, Color color, FontWrapper wrapper, boolean underline, boolean strikethrough, boolean italics) {
 		int xOffset = 0;
-		FontWrapper wrapper = wrapperPlain;
-		Color color = defaultColor;
-		boolean italics = false;
+		for (char c : string.toCharArray()) {
+			xOffset += drawChar(c, x + xOffset, y, color, wrapper, underline, strikethrough, italics, true);
+		}
+		return xOffset + (italics ? 2: 0);
+	}
+
+	public int drawToken(Tokenizer.Token token, int x, int y, Color defaultColor){
+		FontWrapper wrapper = token.getTags().contains(Tokenizer.TokenTag.Bold.INSTANCE) ? wrapperBold : wrapperPlain;
+		boolean italics = token.getTags().contains(Tokenizer.TokenTag.Italic.INSTANCE);
+		Color color = token.getTags().contains(Tokenizer.TokenTag.class) ? ((Tokenizer.TokenTag.Color) (token.getTags().get(token.getTags().indexOf(Tokenizer.TokenTag.class)))).getColor() : defaultColor;
+		return drawString(token.getStr(), x, y, defaultColor, wrapper, false, false, italics);
+	}
+
+	public int widthToken(Tokenizer.Token token){
+		FontWrapper wrapper = token.getTags().contains(Tokenizer.TokenTag.Bold.INSTANCE) ? wrapperBold : wrapperPlain;
+		boolean italics = token.getTags().contains(Tokenizer.TokenTag.Italic.INSTANCE);
+		return widthString(token.getStr(), wrapper, italics);
+	}
+
+	public int drawTokens(Tokenizer.Token[] tokens, int x, int y, Color color) {
+		int xOffset = 0;
 		for (Tokenizer.Token token : tokens) {
-			List<Tokenizer.TokenTag> tags = token.getTags();
-			italics = token.contains("Italic");
-			wrapper = token.contains("Bold")?wrapperBold:wrapperPlain;
-			xOffset += stringDraw(token.getStr(), x + xOffset, y, color, wrapper, false, false, italics);
+			xOffset += drawToken(token, x + xOffset, y, color);
 		}
 		return xOffset;
 	}

@@ -1,6 +1,5 @@
 package logisticspipes.gui.guidebook;
 
-import java.awt.Point;
 import java.io.IOException;
 import java.util.ArrayList;
 
@@ -31,7 +30,7 @@ import logisticspipes.gui.guidebook.book.MenuItem;
 import logisticspipes.gui.guidebook.book.SavedTab;
 import logisticspipes.items.ItemGuideBook;
 import logisticspipes.utils.GuideBookContents;
-import logisticspipes.utils.font.LPFontRenderer;
+import logisticspipes.utils.font.renderer.LPFontRenderer;
 
 public class GuiGuideBook extends GuiScreen {
 
