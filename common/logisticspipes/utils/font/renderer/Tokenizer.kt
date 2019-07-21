@@ -1,128 +1,151 @@
 package logisticspipes.utils.font.renderer
 
 import logisticspipes.LogisticsPipes
+import logisticspipes.utils.string.StringUtils.handleColor
 import java.awt.Color
 
 /*
  * TODO (This will not be pushed to the main repo, it is merely for personal tracking :P)
- *  - Add cases for underlined and for strikethrough
+ *  - Add cases for underlined and for ~~strikethrough~~
  *  - Add Image, Link and Color parsing
  *  - Add Item Translated name support
  */
 
 object Tokenizer {
 
-    var state = State.Normal
     var current = mutableListOf<TokenTag>()
-
+    var currentColor = Color.WHITE
+    var definition = Definition.None
 
     fun tokenize(str: String): Array<Token> {
         var strC = str.toCharArray()
         var string = StringBuilder()
         var tokens = mutableListOf<Token>()
         strC.forEachIndexed { index, c ->
-            when (c) {
+            if (definition == Tokenizer.Definition.None) when (c) {
+                '\n' -> string.handleLineBreak(c, index, strC, tokens)
                 '_', '*' -> string.handleAsteriskAndUnderscore(c, index, strC, tokens)
+                '[' -> string.handleSquareParenthesis(c, index, strC, tokens)
+                '~' -> string.handleTilda(c, index, strC, tokens)
+                else -> string.handleDefault(c, index, strC, tokens)
+            } else when (c){
                 '[', ']' -> string.handleSquareParenthesis(c, index, strC, tokens)
-                '(', ')' -> string.handleParenthesis(c, index, strC, tokens)
                 else -> string.handleDefault(c, index, strC, tokens)
             }
         }
-        return  tokens.toTypedArray()
+        return tokens.toTypedArray()
     }
 
-    private fun StringBuilder.handleParenthesis(c: Char, index: Int, strC: CharArray, tokens: MutableList<Token>) {
-        fun handleColor() {
-            fun opener() {
-                if (strC.prevChar(index) != ']') {
-                    handleDefault(c, index, strC, tokens)
-                } else {
-                    this.clear()
-                }
+    private fun StringBuilder.handleLineBreak(c: Char, index: Int, strC: CharArray, tokens: MutableList<Token>){
+        var lineBreakTag = mutableListOf<TokenTag>()
+        lineBreakTag.add(Tokenizer.TokenTag.LineBreak)
+        if(strC.prevChar(index) == ' '){
+            if(strC.prevChar(index-1) == ' '){
+                tokens.add(Token("", lineBreakTag.toMutableList(), currentColor))
+            }else{
+                tokens.add(Token("", current.toMutableList(), currentColor))
             }
-
-            fun closer() {
-                tokens.add(Token(this.toString(), current.toMutableList()))
-                current.remove(Tokenizer.TokenTag.Color())
-                state = Tokenizer.State.Normal
-                this.clear()
-            }
-
-            when (c) {
-                '(' -> opener()
-                ')' -> closer()
-            }
+        }else{
+            tokens.add(Token(" ", current.toMutableList(), currentColor))
         }
-
-        if (strC.prevChar(index) == '\\') {
-            handleDefault(c, index, strC, tokens)
-        } else when (state) {
-            Tokenizer.State.Color, Tokenizer.State.ColorText -> handleColor()
-            else -> Unit
-        }
+        clear()
     }
 
     private fun StringBuilder.handleSquareParenthesis(c: Char, index: Int, strC: CharArray, tokens: MutableList<Token>) {
-        fun handleColor() {
+        fun StringBuilder.handleColor() {
             fun opener() {
-                this.deleteCharAt(lastIndex)
-                if (this.isNotEmpty()) tokens.add(Token(this.toString(), current.toMutableList()))
-                state = State.Color
-                this.clear()
+                deleteCharAt(lastIndex)
+                definition = Definition.Color
+                if (isNotEmpty()) tokens.add(Token(toString(), current.toMutableList(), currentColor ?: Color.WHITE))
+                clear()
             }
 
             fun closer() {
-                if (strC.prevChar(index) == '\\') {
-                    return handleDefault(c, index, strC, tokens)
-                }
-                if (strC.nextChar(index) == '(') {
-                    current.add(TokenTag.Color(color = this.toString().toColor()))
-                    state = State.ColorText
-                    this.clear()
-                }
+                currentColor = toString().toColor()
+                definition = Tokenizer.Definition.None
+                clear()
             }
 
+            if (c == '[') opener() else closer()
+        }
 
-            when (c) {
-                '[' -> opener()
-                ']' -> closer()
+        if (c == '[') {
+            if (definition == Tokenizer.Definition.None) when (strC.prevChar(index)) {
+                '\\' -> handleDefault(c, index, strC, tokens)
+                '+' -> handleColor()
             }
-        }
-
-        // Chooses which special tag is being set by checking the character prior to the '['
-        fun opener() = when (strC.prevChar(index)) {
-            '\\' -> handleDefault(c, index, strC, tokens)
-            '+' -> handleColor()
-            else -> Unit
-        }
-
-        fun closer() = when (strC.nextChar(index)) { //TODO Change
-            '(' -> {
-                if (TokenTag.Color() in current) handleColor()
-                else handleDefault(c, index, strC, tokens)
+        } else if (c == ']'){
+            if (definition != Tokenizer.Definition.None && strC.prevChar(index) != '\\') when (definition) {
+                Tokenizer.Definition.None -> handleDefault(c, index, strC, tokens)
+                Tokenizer.Definition.Color -> handleColor()
             }
-            else -> Unit
-        }
-
-        // Choose between both possibilities
-        when (c) {
-            '[' -> opener()
-            ']' -> closer()
         }
     }
 
+    /*
+    * Handler for the '~' character, that leads to the Strikethrough text format.
+    * */
+    private fun StringBuilder.handleTilda(c: Char, index: Int, strC: CharArray, tokens: MutableList<Token>) {
+        fun StringBuilder.handleStrikethrough() {
+            fun opener() {
+                deleteCharAt(lastIndex)
+                if (isNotEmpty()) tokens.add(Token(toString(), current.toMutableList(), currentColor ?: Color.WHITE))
+                current.add(Tokenizer.TokenTag.Strikethrough)
+                clear()
+            }
+
+            fun closer() {
+                deleteCharAt(lastIndex)
+                if (isNotEmpty()) tokens.add(Token(toString(), current.toMutableList(), currentColor ?: Color.WHITE))
+                current.remove(Tokenizer.TokenTag.Strikethrough)
+                clear()
+            }
+
+            if (!current.contains(Tokenizer.TokenTag.Strikethrough)) opener() else closer()
+        }
+
+        fun StringBuilder.handleUnderline() {
+            fun opener() {
+                if (isNotEmpty()) tokens.add(Token(toString(), current.toMutableList(), currentColor ?: Color.WHITE))
+                current.add(Tokenizer.TokenTag.Underline)
+                clear()
+            }
+
+            fun closer() {
+                if (isNotEmpty()) tokens.add(Token(toString(), current.toMutableList(), currentColor ?: Color.WHITE))
+                current.remove(Tokenizer.TokenTag.Underline)
+                clear()
+            }
+
+            if (!current.contains(Tokenizer.TokenTag.Underline)) opener() else closer()
+        }
+
+        when (strC.nextChar(index)) {
+            c -> handleDefault(c, index, strC, tokens)
+            else -> {
+                when (strC.prevChar(index)) {
+                    c -> handleStrikethrough()
+                    else -> handleUnderline()
+                }
+            }
+        }
+    }
+
+    /*
+     Handler for the '*' and '_' characters which can lead to either Bold or Italic formatting depending on the situation.
+     */
     private fun StringBuilder.handleAsteriskAndUnderscore(c: Char, index: Int, strC: CharArray, tokens: MutableList<Token>) {
         fun StringBuilder.handleBold() {
             fun opener() {
                 this.deleteCharAt(this.lastIndex)
-                if (this.isNotEmpty()) tokens.add(Token(this.toString(), current.toMutableList()))
+                if (this.isNotEmpty()) tokens.add(Token(this.toString(), current.toMutableList(), currentColor ?: Color.WHITE))
                 current.add(Tokenizer.TokenTag.Bold)
                 this.clear()
             }
 
             fun closer() {
                 this.deleteCharAt(this.lastIndex)
-                if (this.isNotEmpty()) tokens.add(Token(this.toString(), current.toMutableList()))
+                if (this.isNotEmpty()) tokens.add(Token(this.toString(), current.toMutableList(), currentColor ?: Color.WHITE))
                 current.remove(Tokenizer.TokenTag.Bold)
                 this.clear()
             }
@@ -132,13 +155,13 @@ object Tokenizer {
 
         fun StringBuilder.handleItalic() {
             fun opener() {
-                if (this.isNotEmpty()) tokens.add(Token(this.toString(), current.toMutableList()))
+                if (this.isNotEmpty()) tokens.add(Token(this.toString(), current.toMutableList(), currentColor ?: Color.WHITE))
                 current.add(Tokenizer.TokenTag.Italic)
                 this.clear()
             }
 
             fun closer() {
-                if (this.isNotEmpty()) tokens.add(Token(this.toString(), current.toMutableList()))
+                if (this.isNotEmpty()) tokens.add(Token(this.toString(), current.toMutableList(), currentColor ?: Color.WHITE))
                 current.remove(Tokenizer.TokenTag.Italic)
                 this.clear()
             }
@@ -164,7 +187,7 @@ object Tokenizer {
         if (c != '\\') this.append(c)
         else if (strC.prevChar(index) == '\\') this.append(c)
         if (index == strC.lastIndex || c == ' ') {
-            tokens.add(Token(this.toString(), current))
+            tokens.add(Token(this.toString(), current, currentColor ?: Color.WHITE))
             this.clear()
         }
     }
@@ -203,27 +226,23 @@ object Tokenizer {
     /*
      Token that has the token text as well as all the formatting tags associated with that text.
      */
-    class Token(val str: String, val tags: MutableList<TokenTag>)
+    class Token(val str: String, val tags: MutableList<TokenTag>, val color: Color)
 
     /*
      Used to track the tags a token has so the renderer knows how to draw said token.
      This is also a sealed class instead of an enum class because this way I can store the linked page in the Link tag as well as an image in an Image tag, for example.
      */
-    sealed class TokenTag {
-        object Italic : TokenTag()
-        object Bold : TokenTag()
-        class Color(var color: java.awt.Color = java.awt.Color.WHITE) : TokenTag()
+    enum class TokenTag {
+        Italic,
+        Bold,
+        Strikethrough,
+        Underline,
+        LineBreak
     }
 
-    enum class State {
-        Normal,
-        Color,
-        ColorText,
-        Image,
-        ImageText,
-        Item,
-        ItemText,
-        LinkParsing
+    enum class Definition {
+        None,
+        Color
     }
 }
 

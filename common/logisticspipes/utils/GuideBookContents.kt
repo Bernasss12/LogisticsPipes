@@ -59,9 +59,9 @@ class GuideBookContents private constructor(val lang: String, val divisions: Lis
             var cha = title.replace("[^A-z]".toRegex(), "_").toLowerCase()
             if (index !in 0 until nPages) return null
             try {
-                val res = rm.getResource(ResourceLocation(LPConstants.LP_MOD_ID, "book/$lang/$par/$cha/page$index"))
+                val res = rm.getResource(ResourceLocation(LPConstants.LP_MOD_ID, "book/$lang/$par/$cha/page$index.md"))
                 res.use {
-                    val text = res.inputStream.bufferedReader().readLines().joinToString("")
+                    val text = res.inputStream.bufferedReader().readLines().joinToString("\n")
                     return Page(dindex, cindex, index, text)
                 }
             } catch (e: IOException) {

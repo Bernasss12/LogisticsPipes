@@ -1,6 +1,7 @@
 package logisticspipes.utils.font.renderer;
 
 import java.awt.Color;
+import java.awt.Point;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BufferBuilder;
@@ -9,6 +10,7 @@ import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.util.ResourceLocation;
 
+import javafx.geometry.Pos;
 import org.lwjgl.opengl.GL11;
 
 import logisticspipes.LPConstants;
@@ -124,25 +126,32 @@ public class LPFontRenderer {
 		return xOffset + (italics ? 2: 0);
 	}
 
-	public int drawToken(Tokenizer.Token token, int x, int y, Color defaultColor){
-		FontWrapper wrapper = token.getTags().contains(Tokenizer.TokenTag.Bold.INSTANCE) ? wrapperBold : wrapperPlain;
-		boolean italics = token.getTags().contains(Tokenizer.TokenTag.Italic.INSTANCE);
-		Color color = token.getTags().contains(Tokenizer.TokenTag.class) ? ((Tokenizer.TokenTag.Color) (token.getTags().get(token.getTags().indexOf(Tokenizer.TokenTag.class)))).getColor() : defaultColor;
-		return drawString(token.getStr(), x, y, defaultColor, wrapper, false, false, italics);
+	public Point drawToken(Tokenizer.Token token, int x, int y, Color defaultColor){
+		FontWrapper wrapper = token.getTags().contains(Tokenizer.TokenTag.Bold) ? wrapperBold : wrapperPlain;
+		boolean italics = token.getTags().contains(Tokenizer.TokenTag.Italic);
+		boolean strikethrough = token.getTags().contains(Tokenizer.TokenTag.Strikethrough);
+		boolean underline = token.getTags().contains(Tokenizer.TokenTag.Underline);
+		int yOffset = token.getTags().contains(Tokenizer.TokenTag.LineBreak)?10:0;
+		Color color = token.getColor();
+		return new Point(drawString(token.getStr(), x, y, color, wrapper, underline, strikethrough, italics), yOffset);
 	}
 
 	public int widthToken(Tokenizer.Token token){
-		FontWrapper wrapper = token.getTags().contains(Tokenizer.TokenTag.Bold.INSTANCE) ? wrapperBold : wrapperPlain;
-		boolean italics = token.getTags().contains(Tokenizer.TokenTag.Italic.INSTANCE);
+		FontWrapper wrapper = token.getTags().contains(Tokenizer.TokenTag.Bold) ? wrapperBold : wrapperPlain;
+		boolean italics = token.getTags().contains(Tokenizer.TokenTag.Italic);
 		return widthString(token.getStr(), wrapper, italics);
 	}
 
-	public int drawTokens(Tokenizer.Token[] tokens, int x, int y, Color color) {
+	public Point drawTokens(Tokenizer.Token[] tokens, int x, int y, Color color) {
+		Point temp;
 		int xOffset = 0;
+		int yOffset = 0;
 		for (Tokenizer.Token token : tokens) {
-			xOffset += drawToken(token, x + xOffset, y, color);
+			temp = drawToken(token, x + xOffset, y + yOffset, color);
+			xOffset += temp.x;
+			yOffset += temp.y;
 		}
-		return xOffset;
+		return new Point(xOffset, yOffset);
 	}
 
 	public void lineDrawHorizontal(int x, int y, int width, int thickness, Color color) {
