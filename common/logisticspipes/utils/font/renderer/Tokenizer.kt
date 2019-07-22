@@ -1,7 +1,6 @@
 package logisticspipes.utils.font.renderer
 
 import logisticspipes.LogisticsPipes
-import logisticspipes.utils.string.StringUtils.handleColor
 import java.awt.Color
 
 /*
@@ -14,13 +13,13 @@ import java.awt.Color
 object Tokenizer {
 
     var current = mutableListOf<TokenTag>()
-    var currentColor = Color.WHITE
+    private var currentColor = Color.WHITE
     var definition = Definition.None
 
-    fun tokenize(str: String): Array<Token> {
+    fun tokenize(str: String): Array<IToken> {
         var strC = str.toCharArray()
         var string = StringBuilder()
-        var tokens = mutableListOf<Token>()
+        var tokens = mutableListOf<IToken>()
         strC.forEachIndexed { index, c ->
             if (definition == Tokenizer.Definition.None) when (c) {
                 '\n' -> string.handleLineBreak(c, index, strC, tokens)
@@ -36,12 +35,10 @@ object Tokenizer {
         return tokens.toTypedArray()
     }
 
-    private fun StringBuilder.handleLineBreak(c: Char, index: Int, strC: CharArray, tokens: MutableList<Token>){
-        var lineBreakTag = mutableListOf<TokenTag>()
-        lineBreakTag.add(Tokenizer.TokenTag.LineBreak)
+    private fun StringBuilder.handleLineBreak(c: Char, index: Int, strC: CharArray, tokens: MutableList<IToken>){
         if(strC.prevChar(index) == ' '){
             if(strC.prevChar(index-1) == ' '){
-                tokens.add(Token("", lineBreakTag.toMutableList(), currentColor))
+                tokens.add(TokenLineBreak())
             }else{
                 tokens.add(Token("", current.toMutableList(), currentColor))
             }
@@ -51,7 +48,7 @@ object Tokenizer {
         clear()
     }
 
-    private fun StringBuilder.handleSquareParenthesis(c: Char, index: Int, strC: CharArray, tokens: MutableList<Token>) {
+    private fun StringBuilder.handleSquareParenthesis(c: Char, index: Int, strC: CharArray, tokens: MutableList<IToken>) {
         fun StringBuilder.handleColor() {
             fun opener() {
                 deleteCharAt(lastIndex)
@@ -85,7 +82,7 @@ object Tokenizer {
     /*
     * Handler for the '~' character, that leads to the Strikethrough text format.
     * */
-    private fun StringBuilder.handleTilda(c: Char, index: Int, strC: CharArray, tokens: MutableList<Token>) {
+    private fun StringBuilder.handleTilda(c: Char, index: Int, strC: CharArray, tokens: MutableList<IToken>) {
         fun StringBuilder.handleStrikethrough() {
             fun opener() {
                 deleteCharAt(lastIndex)
@@ -134,7 +131,7 @@ object Tokenizer {
     /*
      Handler for the '*' and '_' characters which can lead to either Bold or Italic formatting depending on the situation.
      */
-    private fun StringBuilder.handleAsteriskAndUnderscore(c: Char, index: Int, strC: CharArray, tokens: MutableList<Token>) {
+    private fun StringBuilder.handleAsteriskAndUnderscore(c: Char, index: Int, strC: CharArray, tokens: MutableList<IToken>) {
         fun StringBuilder.handleBold() {
             fun opener() {
                 this.deleteCharAt(this.lastIndex)
@@ -183,7 +180,7 @@ object Tokenizer {
      Handler for the default case:
      Runs if no Markdown tags are detected within the current character and the ones before and after.
      */
-    private fun StringBuilder.handleDefault(c: Char, index: Int, strC: CharArray, tokens: MutableList<Token>) {
+    private fun StringBuilder.handleDefault(c: Char, index: Int, strC: CharArray, tokens: MutableList<IToken>) {
         if (c != '\\') this.append(c)
         else if (strC.prevChar(index) == '\\') this.append(c)
         if (index == strC.lastIndex || c == ' ') {
@@ -224,11 +221,6 @@ object Tokenizer {
     }
 
     /*
-     Token that has the token text as well as all the formatting tags associated with that text.
-     */
-    class Token(val str: String, val tags: MutableList<TokenTag>, val color: Color)
-
-    /*
      Used to track the tags a token has so the renderer knows how to draw said token.
      This is also a sealed class instead of an enum class because this way I can store the linked page in the Link tag as well as an image in an Image tag, for example.
      */
@@ -236,8 +228,7 @@ object Tokenizer {
         Italic,
         Bold,
         Strikethrough,
-        Underline,
-        LineBreak
+        Underline
     }
 
     enum class Definition {

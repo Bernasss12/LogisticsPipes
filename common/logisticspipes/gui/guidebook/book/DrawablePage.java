@@ -5,43 +5,49 @@ import java.awt.Point;
 
 import net.minecraft.client.Minecraft;
 
+import lombok.Setter;
+
 import logisticspipes.gui.guidebook.GuiGuideBook;
+import logisticspipes.utils.font.renderer.IToken;
+import logisticspipes.utils.font.renderer.Token;
 import logisticspipes.utils.font.renderer.Tokenizer;
 
 public class DrawablePage implements IDrawable {
 
-	private Tokenizer.Token[] tokens;
+	private GuiGuideBook gui;
+
+	private IToken[] tokens;
+
+	@Setter
+	private String unformattedText;
+	private TextBox textBox;
+	private int mouseX, mouseY;
 
 	public static final float HEADER_SCALING = 1.5F;
+
+	public boolean needsScroll;
 
 	/*
 	 * This is very much a WIP, butchered for testing purposes
 	 */
 
-	boolean tokenized = false;
-
 	@Override
-	public int draw(Minecraft mc, GuiGuideBook gui, int mouseX, int mouseY, int ySliderOffset) {
-		String unformattedText = GuiGuideBook.currentPage.page.getText();
-		if (!tokenized) {
-			tokens = Tokenizer.INSTANCE.tokenize(unformattedText);
-			tokenized = true;
-		}
-		int xOffset = 0;
-		int yOffset = 0;
-		Point temp;
-		for (Tokenizer.Token token : tokens) {
-			if (xOffset + gui.fr.widthToken(token) < gui.getAreaAcrossX()) {
-				temp = gui.fr.drawToken(token, gui.getAreaX0() + xOffset, gui.getAreaY0() + ySliderOffset + yOffset + 5, new Color(0xFFFFFFFF));
-				xOffset = temp.y == 0 ? xOffset + temp.x : 0;
-				yOffset += temp.y;
-			} else {
-				yOffset += 10;
-				temp = gui.fr.drawToken(token, gui.getAreaX0() + xOffset, gui.getAreaY0() + ySliderOffset + yOffset + 5, new Color(0xFFFFFFFF));
-				xOffset = temp.x;
-				yOffset += temp.y;
-			}
-		}
-		return yOffset;
+	public void draw(Minecraft mc, GuiGuideBook gui, int mouseX, int mouseY, float scroll) {
+		this.mouseX = mouseX;
+		this.mouseY = mouseY;
+		this.gui = gui;
+		if(tokens == null) reloadPage();
+		if(textBox != null) textBox.draw(scroll);
+		this.needsScroll = textBox.needsScroll;
+	}
+
+	public void reloadPage(){
+		unformattedText = GuiGuideBook.currentPage.page.getText();
+		tokens = Tokenizer.INSTANCE.tokenize(unformattedText);
+		textBox = new TextBox(gui, gui.getAreaX0(), gui.getAreaY0(), gui.getAreaAcrossX(), gui.getAreaAcrossY(), mouseX, mouseY, tokens);
+	}
+	
+	public boolean getScrollNeeds() {
+		return needsScroll;
 	}
 }

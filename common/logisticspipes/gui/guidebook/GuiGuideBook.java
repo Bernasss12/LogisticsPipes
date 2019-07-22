@@ -133,8 +133,8 @@ public class GuiGuideBook extends GuiScreen {
 	 * Chooses the appropriate draw methods for the current to be drawn content
 	 */
 	protected void drawCurrentEvent() {
-		int yOffset = slider.enabled ? -(int) (MathHelper.clamp(slider.getProgress() * (areaCurrentlyDrawnY - areaAcrossY), 0, areaCurrentlyDrawnY - areaAcrossY)) : 0;
-		areaCurrentlyDrawnY = currentPage.drawable.draw(mc, this, mouseX, mouseY, yOffset);
+		currentPage.drawable.draw(mc, this, mouseX, mouseY, slider.getProgress());
+		//slider.enabled = currentPage.drawable.getScrollNeeds();
 	}
 
 	/*
@@ -385,11 +385,13 @@ public class GuiGuideBook extends GuiScreen {
 
 	protected void nextPage() {
 		if (nextPage.enabled) currentPage.nextPage();
+		page.reloadPage();
 		updateButtonVisibility();
 	}
 
 	protected void prevPage() {
 		if (prevPage.enabled) currentPage.prevPage();
+		page.reloadPage();
 		updateButtonVisibility();
 	}
 
@@ -649,7 +651,5 @@ public class GuiGuideBook extends GuiScreen {
 		}
 	}
 
-	public class MenuItemsChapter {
-
-	}
+	public class MenuItemsChapter {}
 }

@@ -13,17 +13,19 @@ public class DrawableMenu implements IDrawable {
 		super();
 	}
 
+	public boolean needsScroll = false;
+
 	@Override
-	public int draw(Minecraft mc, GuiGuideBook gui, int mouseX, int mouseY, int yOffset) {
+	public void draw(Minecraft mc, GuiGuideBook gui, int mouseX, int mouseY, float scroll) {
 		int areaCurrentY = 0;
 		mouseX = mouseX < gui.getGuiX0() || mouseX > gui.getGuiX3() ? 0 : mouseX;
 		mouseY = mouseY < gui.getGuiY0() || mouseY > gui.getGuiY3() ? 0 : mouseY;
 		for (GuideBookContents.Division div : gui.gbc.getDivisions()) {
-			gui.drawMenuText(mc, gui.getAreaX0(), gui.getAreaY0() + areaCurrentY + yOffset, gui.getAreaAcrossX(), 19, div.getTitle());
+			gui.drawMenuText(mc, gui.getAreaX0(), gui.getAreaY0() + areaCurrentY, gui.getAreaAcrossX(), 19, div.getTitle()); // Re add offset
 			areaCurrentY += 20;
 			for (int chapterIndex = 0; chapterIndex < div.getChapters().size(); chapterIndex++) {
-				gui.divisionsList.get(div.getDindex()).getList().get(chapterIndex).drawMenuItem(mc, mouseX, mouseY, gui.getAreaX0() + (chapterIndex % gui.getTileMax() * (gui.getTileSize() + gui.getTileSpacing())), gui.getAreaY0() + areaCurrentY + yOffset, gui.getTileSize(), gui.getTileSize(), false);
-				int tileBottom = (gui.getAreaY0() + areaCurrentY + yOffset + gui.getTileSize());
+				gui.divisionsList.get(div.getDindex()).getList().get(chapterIndex).drawMenuItem(mc, mouseX, mouseY, gui.getAreaX0() + (chapterIndex % gui.getTileMax() * (gui.getTileSize() + gui.getTileSpacing())), gui.getAreaY0() + areaCurrentY, gui.getTileSize(), gui.getTileSize(), false); // Re add offset
+				int tileBottom = (gui.getAreaY0() + areaCurrentY + gui.getTileSize()); // Re add offset
 				int maxBottom = gui.getAreaY1();
 				boolean above = tileBottom > maxBottom;
 				gui.divisionsList.get(div.getDindex()).getList().get(chapterIndex).drawTitle(mc, mouseX, mouseY, above);
@@ -31,6 +33,5 @@ public class DrawableMenu implements IDrawable {
 				if (chapterIndex == div.getChapters().size() - 1) areaCurrentY += gui.getTileSize();
 			}
 		}
-		return areaCurrentY;
 	}
 }

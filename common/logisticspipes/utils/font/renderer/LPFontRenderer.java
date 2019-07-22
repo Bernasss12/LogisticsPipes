@@ -10,7 +10,7 @@ import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.util.ResourceLocation;
 
-import javafx.geometry.Pos;
+import lombok.Getter;
 import org.lwjgl.opengl.GL11;
 
 import logisticspipes.LPConstants;
@@ -21,6 +21,7 @@ import logisticspipes.utils.font.FontWrapper;
 public class LPFontRenderer {
 
 	private Minecraft mc;
+	@Getter
 	private BDF fontPlain;
 	private BDF fontBold;
 	private FontWrapper wrapperPlain;
@@ -83,9 +84,9 @@ public class LPFontRenderer {
 		return glyph.getDWidthX();
 	}
 
-	protected int width(char c, FontWrapper wrapper, boolean italics) {
+	protected Point offset(char c, FontWrapper wrapper, boolean italics) {
 		BDF.IGlyph glyph = wrapper.getGlyph(c);
-		return glyph != null ? glyph.getDWidthX() : 0;
+		return new Point(glyph != null ? glyph.getDWidthX() : 0, 0);
 	}
 
 	private int drawChar(char c, int x, int y, Color color, FontWrapper wrapper, boolean underline, boolean strikethrough, boolean italics, boolean shadow) {
@@ -107,15 +108,15 @@ public class LPFontRenderer {
 		for (char c : string.toCharArray()) {
 			xOffset += drawChar(c, x + xOffset, y, color, wrapper, underline, strikethrough, italics, false);
 		}
-		return xOffset + (italics ? 2: 0);
+		return xOffset + (italics ? 2 : 0);
 	}
 
-	public int widthString(String string, FontWrapper wrapper, boolean italics){
+	public Point offsetString(String string, FontWrapper wrapper, boolean italics) {
 		int xOffset = 0;
-		for (char c : string.toCharArray()){
-			xOffset = width(c, wrapper, italics);
+		for (char c : string.toCharArray()) {
+			xOffset += offset(c, wrapper, italics).x;
 		}
-		return xOffset;
+		return new Point(xOffset + (italics ? 2 : 0), 0);
 	}
 
 	public int stringDrawWithShadow(String string, int x, int y, Color color, FontWrapper wrapper, boolean underline, boolean strikethrough, boolean italics) {
@@ -123,35 +124,30 @@ public class LPFontRenderer {
 		for (char c : string.toCharArray()) {
 			xOffset += drawChar(c, x + xOffset, y, color, wrapper, underline, strikethrough, italics, true);
 		}
-		return xOffset + (italics ? 2: 0);
+		return xOffset + (italics ? 2 : 0);
 	}
 
-	public Point drawToken(Tokenizer.Token token, int x, int y, Color defaultColor){
+	public Point drawToken(Token token, int x, int y) {
 		FontWrapper wrapper = token.getTags().contains(Tokenizer.TokenTag.Bold) ? wrapperBold : wrapperPlain;
 		boolean italics = token.getTags().contains(Tokenizer.TokenTag.Italic);
 		boolean strikethrough = token.getTags().contains(Tokenizer.TokenTag.Strikethrough);
 		boolean underline = token.getTags().contains(Tokenizer.TokenTag.Underline);
-		int yOffset = token.getTags().contains(Tokenizer.TokenTag.LineBreak)?10:0;
+		int yOffset = token.getClass().equals(TokenLineBreak.class) ? 10 : 0;
 		Color color = token.getColor();
 		return new Point(drawString(token.getStr(), x, y, color, wrapper, underline, strikethrough, italics), yOffset);
 	}
 
-	public int widthToken(Tokenizer.Token token){
-		FontWrapper wrapper = token.getTags().contains(Tokenizer.TokenTag.Bold) ? wrapperBold : wrapperPlain;
-		boolean italics = token.getTags().contains(Tokenizer.TokenTag.Italic);
-		return widthString(token.getStr(), wrapper, italics);
-	}
-
-	public Point drawTokens(Tokenizer.Token[] tokens, int x, int y, Color color) {
-		Point temp;
-		int xOffset = 0;
-		int yOffset = 0;
-		for (Tokenizer.Token token : tokens) {
-			temp = drawToken(token, x + xOffset, y + yOffset, color);
-			xOffset += temp.x;
-			yOffset += temp.y;
-		}
-		return new Point(xOffset, yOffset);
+	public Point offsetToken(IToken token) {
+		if (token.getClass().equals(Token.class)) {
+			FontWrapper wrapper = ((Token) token).getTags().contains(Tokenizer.TokenTag.Bold) ? wrapperBold : wrapperPlain;
+			boolean italics = ((Token) token).getTags().contains(Tokenizer.TokenTag.Italic);
+			return offsetString(((Token) token).getStr(), wrapper, italics);
+		} else if (token.getClass().equals(TokenLineBreak.class)){
+			return new Point(0, 10);
+		} else return new Point();
+		// Image
+		// Link
+		// Header
 	}
 
 	public void lineDrawHorizontal(int x, int y, int width, int thickness, Color color) {
