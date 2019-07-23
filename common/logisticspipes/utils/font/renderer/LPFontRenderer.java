@@ -26,6 +26,7 @@ public class LPFontRenderer {
 	private BDF fontBold;
 	private FontWrapper wrapperPlain;
 	private FontWrapper wrapperBold;
+	private double zLevel = 5.0F;
 
 	public LPFontRenderer(Minecraft mc, String fontName) {
 		this.mc = mc;
@@ -75,10 +76,10 @@ public class LPFontRenderer {
 		BufferBuilder buffer = tessellator.getBuffer();
 		buffer.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION_TEX_COLOR);
 		// Buffer vertex setting
-		buffer.pos(x0 + italicsOffset, y0, 15.0D).tex(u0, v0).color(color.getRed(), color.getGreen(), color.getBlue(), color.getAlpha()).endVertex();
-		buffer.pos(x0, y1, 15.0D).tex(u0, v1).color(color.getRed(), color.getGreen(), color.getBlue(), color.getAlpha()).endVertex();
-		buffer.pos(x1, y1, 15.0D).tex(u1, v1).color(color.getRed(), color.getGreen(), color.getBlue(), color.getAlpha()).endVertex();
-		buffer.pos(x1 + italicsOffset, y0, 15.0D).tex(u1, v0).color(color.getRed(), color.getGreen(), color.getBlue(), color.getAlpha()).endVertex();
+		buffer.pos(x0 + italicsOffset, y0, zLevel).tex(u0, v0).color(color.getRed(), color.getGreen(), color.getBlue(), color.getAlpha()).endVertex();
+		buffer.pos(x0, y1, zLevel).tex(u0, v1).color(color.getRed(), color.getGreen(), color.getBlue(), color.getAlpha()).endVertex();
+		buffer.pos(x1, y1, zLevel).tex(u1, v1).color(color.getRed(), color.getGreen(), color.getBlue(), color.getAlpha()).endVertex();
+		buffer.pos(x1 + italicsOffset, y0, zLevel).tex(u1, v0).color(color.getRed(), color.getGreen(), color.getBlue(), color.getAlpha()).endVertex();
 		tessellator.draw();
 		GlStateManager.disableAlpha();
 		return glyph.getDWidthX();
@@ -98,7 +99,7 @@ public class LPFontRenderer {
 			lineDrawHorizontal(x, y + 1, glyph.getDWidthX(), 1, color);
 		}
 		if (shadow) {
-			draw(c, x + 1, y + 1, color, wrapper, italics);
+			draw(c, x + 1, y + 1, new Color(0x3C3F41), wrapper, italics);
 		}
 		return draw(c, x, y, color, wrapper, italics);
 	}
@@ -119,8 +120,13 @@ public class LPFontRenderer {
 		return new Point(xOffset + (italics ? 2 : 0), 0);
 	}
 
-	public int stringDrawWithShadow(String string, int x, int y, Color color, FontWrapper wrapper, boolean underline, boolean strikethrough, boolean italics) {
+	public int drawStringWithShadow(String string, int x, int y, Color color) {
+		return drawStringWithShadow(string, x, y, color, false, false, false, false);
+	}
+
+	public int drawStringWithShadow(String string, int x, int y, Color color, boolean bold, boolean underline, boolean strikethrough, boolean italics) {
 		int xOffset = 0;
+		FontWrapper wrapper = !bold ? wrapperPlain : wrapperBold;
 		for (char c : string.toCharArray()) {
 			xOffset += drawChar(c, x + xOffset, y, color, wrapper, underline, strikethrough, italics, true);
 		}
@@ -142,7 +148,7 @@ public class LPFontRenderer {
 			FontWrapper wrapper = ((Token) token).getTags().contains(Tokenizer.TokenTag.Bold) ? wrapperBold : wrapperPlain;
 			boolean italics = ((Token) token).getTags().contains(Tokenizer.TokenTag.Italic);
 			return offsetString(((Token) token).getStr(), wrapper, italics);
-		} else if (token.getClass().equals(TokenLineBreak.class)){
+		} else if (token.getClass().equals(TokenLineBreak.class)) {
 			return new Point(0, 10);
 		} else return new Point();
 		// Image

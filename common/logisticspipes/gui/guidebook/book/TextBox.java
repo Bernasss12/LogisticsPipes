@@ -41,7 +41,7 @@ public class TextBox {
 					xOffset = 0;
 					yOffset += 10;
 				}
-				temp = gui.fr.drawToken((Token) token, x + xOffset, y + yOffset + ySliderOffset);
+				temp = gui.fr.drawToken((Token) token, x + xOffset, y + yOffset - ySliderOffset);
 				xOffset += temp.x;
 				yOffset += temp.y;
 			}
@@ -79,10 +79,10 @@ public class TextBox {
 			//Links
 			//Headers
 		}
-		return yOffset;
+		return yOffset + 10; // Instead of 10 it needs to be the height of the last token.
 	}
 
 	private int calculateSliderOffset(float scroll) {
-		return needsScroll ? (MathHelper.clamp((int) (drawnHeight - height * scroll), 0, drawnHeight - height)) : 0;
+		return needsScroll ? (MathHelper.clamp((int) ((drawnHeight - height) * scroll), 0, drawnHeight - height)) : 0;
 	}
 }

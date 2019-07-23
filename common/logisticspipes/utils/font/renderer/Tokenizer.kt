@@ -2,6 +2,7 @@ package logisticspipes.utils.font.renderer
 
 import logisticspipes.LogisticsPipes
 import java.awt.Color
+import java.awt.Image
 
 /*
  * TODO (This will not be pushed to the main repo, it is merely for personal tracking :P)
@@ -27,7 +28,7 @@ object Tokenizer {
                 '[' -> string.handleSquareParenthesis(c, index, strC, tokens)
                 '~' -> string.handleTilda(c, index, strC, tokens)
                 else -> string.handleDefault(c, index, strC, tokens)
-            } else when (c){
+            } else when (c) {
                 '[', ']' -> string.handleSquareParenthesis(c, index, strC, tokens)
                 else -> string.handleDefault(c, index, strC, tokens)
             }
@@ -35,17 +36,33 @@ object Tokenizer {
         return tokens.toTypedArray()
     }
 
-    private fun StringBuilder.handleLineBreak(c: Char, index: Int, strC: CharArray, tokens: MutableList<IToken>){
-        if(strC.prevChar(index) == ' '){
-            if(strC.prevChar(index-1) == ' '){
+    private fun StringBuilder.handleLineBreak(c: Char, index: Int, strC: CharArray, tokens: MutableList<IToken>) {
+        if (strC.prevChar(index) == ' ') {
+            if (strC.prevChar(index - 1) == ' ') {
                 tokens.add(TokenLineBreak())
-            }else{
+            } else {
                 tokens.add(Token("", current.toMutableList(), currentColor))
             }
-        }else{
+        } else {
             tokens.add(Token(" ", current.toMutableList(), currentColor))
         }
         clear()
+    }
+
+    private fun StringBuilder.handleParenthesis(c: Char, index: Int, strC: CharArray, tokens: MutableList<IToken>){
+        fun StringBuilder.handleImage(){
+            var temp = toString().split("|")
+            tokens.add(TokenImage(temp[0], temp[1]))
+            definition = Tokenizer.Definition.None
+            clear()
+        }
+
+        if(c == ')'){
+            when (definition){
+                Tokenizer.Definition.None, Tokenizer.Definition.Color -> Unit
+                Tokenizer.Definition.Image -> handleImage()
+            }
+        }
     }
 
     private fun StringBuilder.handleSquareParenthesis(c: Char, index: Int, strC: CharArray, tokens: MutableList<IToken>) {
@@ -66,15 +83,32 @@ object Tokenizer {
             if (c == '[') opener() else closer()
         }
 
+        fun StringBuilder.handleImage(){
+            fun opener(){
+                deleteCharAt(lastIndex)
+                definition = Definition.Image
+                if (isNotEmpty()) tokens.add(Token(toString(), current.toMutableList(), currentColor ?: Color.WHITE))
+                clear()
+            }
+
+            fun closer(){
+                append('|')
+            }
+
+            if (c == '[') opener() else closer()
+        }
+
         if (c == '[') {
             if (definition == Tokenizer.Definition.None) when (strC.prevChar(index)) {
                 '\\' -> handleDefault(c, index, strC, tokens)
                 '+' -> handleColor()
+                '!' -> handleImage()
             }
-        } else if (c == ']'){
+        } else if (c == ']') {
             if (definition != Tokenizer.Definition.None && strC.prevChar(index) != '\\') when (definition) {
                 Tokenizer.Definition.None -> handleDefault(c, index, strC, tokens)
                 Tokenizer.Definition.Color -> handleColor()
+                Tokenizer.Definition.Image -> Unit
             }
         }
     }
@@ -233,7 +267,8 @@ object Tokenizer {
 
     enum class Definition {
         None,
-        Color
+        Color,
+        Image
     }
 }
 

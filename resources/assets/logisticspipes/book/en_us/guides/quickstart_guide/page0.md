@@ -3,4 +3,6 @@
 +[red]Red text+[white]
 and this is in the same line as the previous text.  
   
-~~_**~Mashup~**_~~
+~~_**~Mashup~**_~~  
+  
+![AlternativeText](path/to/image.png)

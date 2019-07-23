@@ -8,7 +8,7 @@ class Token(val str: String, val tags: MutableList<Tokenizer.TokenTag>, val colo
 
 class TokenHeader(val tokens: MutableList<Token>) : IToken
 
-class TokenImage(val tokens: MutableList<Token>, val url: String) : IToken
+class TokenImage(val str: String, val url: String) : IToken
 
 class TokenLink(val tokens: MutableList<Token>, val url: String) : IToken
 

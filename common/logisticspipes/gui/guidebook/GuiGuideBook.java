@@ -1,5 +1,6 @@
 package logisticspipes.gui.guidebook;
 
+import java.awt.Color;
 import java.io.IOException;
 import java.util.ArrayList;
 
@@ -17,7 +18,6 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.util.EnumHand;
 import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.math.MathHelper;
 
 import lombok.Getter;
 import org.lwjgl.opengl.GL11;
@@ -56,8 +56,8 @@ public class GuiGuideBook extends GuiScreen {
 	private final int zText = 5;          // Text/Information Z
 	@Getter
 	private final int zBackground = 0;    // Background Z
-	public static GuideBookContents gbc;
 
+	public static GuideBookContents gbc;
 	public static final ResourceLocation GUI_BOOK_TEXTURE = new ResourceLocation(LPConstants.LP_MOD_ID, "textures/gui/guide_book.png");
 
 	// Buttons
@@ -115,9 +115,10 @@ public class GuiGuideBook extends GuiScreen {
 		super();
 		this.hand = hand;
 		this.gbc = gbc;
-		this.page = new DrawablePage();
-		this.menu = new DrawableMenu();
+		this.page = new DrawablePage(this);
+		this.menu = new DrawableMenu(this);
 		this.currentPage = new SavedTab(gbc.getDivision(0).getChapter(0).getPage(0), page);
+		this.fr = new LPFontRenderer(mc, "minecraft");
 		this.menuPage = new SavedTab();
 		this.divisionsList = new ArrayList<>();
 		this.tabList = new ArrayList<>();
@@ -133,7 +134,7 @@ public class GuiGuideBook extends GuiScreen {
 	 * Chooses the appropriate draw methods for the current to be drawn content
 	 */
 	protected void drawCurrentEvent() {
-		currentPage.drawable.draw(mc, this, mouseX, mouseY, slider.getProgress());
+		currentPage.drawable.draw(mouseX, mouseY, slider.getProgress());
 		//slider.enabled = currentPage.drawable.getScrollNeeds();
 	}
 
@@ -189,7 +190,7 @@ public class GuiGuideBook extends GuiScreen {
 		// End menu
 	}
 
-	/**
+	/*
 	 * Gets information from the item's nbt
 	 */
 	protected boolean getDataFromNBT() {
@@ -231,9 +232,9 @@ public class GuiGuideBook extends GuiScreen {
 	public void drawScreen(int mouseX, int mouseY, float partialTicks) {
 		this.mouseX = mouseX;
 		this.mouseY = mouseY;
-		//this.drawTransparentOverlay();
+		this.drawTransparentOverlay();
 		this.drawCurrentEvent();
-		slider.enabled = areaCurrentlyDrawnY > areaAcrossY;
+		slider.enabled = currentPage.drawable.getSliderNeeds();
 		super.drawScreen(mouseX, mouseY, partialTicks);
 		for (GuiGuideBookTabButton tab : tabList) tab.drawButton(mc, mouseX, mouseY, partialTicks);
 		this.drawGuiScroll();
@@ -245,7 +246,7 @@ public class GuiGuideBook extends GuiScreen {
 	public void initGui() {
 		if (!loadedNBT) loadedNBT = this.getDataFromNBT();
 		this.calculateConstraints();
-		this.fr = new LPFontRenderer(mc, "minecraft"); //Todo only perform this once
+		this.page.reloadPage();
 		this.title = this.updateTitle();
 		this.slider = this.addButton(new GuiGuideBookSlider(0, guiSliderX, guiSliderY0, guiSliderY1, zTitleButtons, currentPage.getProgress(), guiSliderWidth, guiSliderHeight));
 		this.slider.enabled = false;
@@ -321,6 +322,7 @@ public class GuiGuideBook extends GuiScreen {
 			if (tab.mousePressed(mc, mouseX, mouseY)) {
 				if (mouseButton == 0) {
 					currentPage = new SavedTab(tab.getTab());
+					page.reloadPage();
 					tab.playPressSound(this.mc.getSoundHandler());
 				} else if (mouseButton == 1) {
 					tryRemoveTab(tab);
@@ -339,6 +341,7 @@ public class GuiGuideBook extends GuiScreen {
 
 	protected void selectChapter(MenuItem item) {
 		currentPage.setPage(item);
+		page.reloadPage();
 		currentPage.drawable = page;
 		title = updateTitle();
 		updateButtonVisibility();
@@ -395,7 +398,7 @@ public class GuiGuideBook extends GuiScreen {
 		updateButtonVisibility();
 	}
 
-	/**
+	/*
 	 * Draws the main title on the centre of the top border of the GUI
 	 */
 	protected void drawTitle() {
@@ -405,7 +408,7 @@ public class GuiGuideBook extends GuiScreen {
 		GlStateManager.popMatrix();
 	}
 
-	/**
+	/*
 	 * Draws the page count in between the page arrows
 	 */
 	public static void drawPageCount(GuiGuideBook gui) {
@@ -415,7 +418,7 @@ public class GuiGuideBook extends GuiScreen {
 		GlStateManager.popMatrix();
 	}
 
-	/**
+	/*
 	 * Draws the main GUI border and background
 	 */
 	@SuppressWarnings("Duplicates")
@@ -436,7 +439,7 @@ public class GuiGuideBook extends GuiScreen {
 
 	}
 
-	/**
+	/*
 	 * Draws the main GUI border with a separator for the slider button
 	 */
 	protected void drawGuiScroll() {
@@ -446,7 +449,7 @@ public class GuiGuideBook extends GuiScreen {
 		this.drawStretchingSquare(guiSepX0, guiSepY2, guiSepX1, guiSepY3, zFrame, guiAtlasSepU0, guiAtlasSepV2, guiAtlasSepU1, guiAtlasSepV3, true);
 	}
 
-	/**
+	/*
 	 * Draws a transparent layer around the GUI to erase the text drawn under
 	 */
 	protected void drawTransparentOverlay() {
@@ -461,7 +464,7 @@ public class GuiGuideBook extends GuiScreen {
 		GlStateManager.popMatrix();
 	}
 
-	/**
+	/*
 	 * Draws the underlay below where the page arrows and page count are to be drawn
 	 */
 	protected void drawCenteredArrowUnderlay(int width) {
@@ -486,21 +489,19 @@ public class GuiGuideBook extends GuiScreen {
 		this.drawStretchingSquare(slideX1, slideY0, slideX2, slideY1, zFrame, slideU1, slideV0, slideU2, slideV1, true);
 	}
 
-	/**
+	/*
 	 * Draws a text line that separates tile groups.
 	 */
-	public static void drawMenuText(Minecraft mc, int x, int y, int sizeX, int sizeY, String text) {
-		GlStateManager.color(1.0F, 1.0F, 1.0F);
+	public static void drawMenuText(GuiGuideBook gui, int x, int y, int sizeX, int sizeY, String text) {
 		int text$size = sizeY / 2;
 		GlStateManager.pushMatrix();
 		GlStateManager.translate(x + 5, ((sizeY - 8) / 2.0) + y, 5);
 		GlStateManager.scale(text$size / 8, text$size / 8, 0);
-		mc.fontRenderer.drawStringWithShadow(text, 0, 0, 0xFFFFFF);
+		gui.fr.drawStringWithShadow(text, 0, 0 + 7, Color.WHITE);
 		GlStateManager.popMatrix();
-		GlStateManager.color(1.0F, 1.0F, 1.0F);
 	}
 
-	/**
+	/*
 	 * Draws a square based on two vertices with (stretching) texture also determined by two vertices: TopLeft & BottomRight
 	 * The vertex(xy) and vertex1(xy) translate to vertex(uv) and vertex1(uv) in the texture atlas.
 	 * The Y increases from the top to the bottom. Blending turned off.
@@ -509,7 +510,7 @@ public class GuiGuideBook extends GuiScreen {
 		drawStretchingSquare(x0, y0, x1, y1, z, u0, v0, u1, v1, false);
 	}
 
-	/**
+	/*
 	 * Draws a square based on two vertices with (stretching) texture also determined by two vertices: TopLeft & BottomRight
 	 * The vertex(xy) and vertex1(xy) translate to vertex(uv) and vertex1(uv) in the texture atlas.
 	 * The Y increases from the top to the bottom. Blend optional
@@ -546,7 +547,7 @@ public class GuiGuideBook extends GuiScreen {
 		GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
 	}
 
-	/**
+	/*
 	 * Draws a square based on two vertices with repeating texture also determined by two vertices: TopLeft & BottomRight
 	 * If the texture size is smaller than the draw size the texture will be repeated until it fills all the area to be drawn.
 	 * The Y increases from the top to the bottom.
@@ -650,6 +651,4 @@ public class GuiGuideBook extends GuiScreen {
 			list.add(item);
 		}
 	}
-
-	public class MenuItemsChapter {}
 }
