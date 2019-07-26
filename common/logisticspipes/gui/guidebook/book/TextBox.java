@@ -1,5 +1,6 @@
 package logisticspipes.gui.guidebook.book;
 
+import java.awt.Color;
 import java.awt.Point;
 
 import net.minecraft.util.math.MathHelper;
@@ -7,6 +8,7 @@ import net.minecraft.util.math.MathHelper;
 import logisticspipes.gui.guidebook.GuiGuideBook;
 import logisticspipes.utils.font.renderer.IToken;
 import logisticspipes.utils.font.renderer.Token;
+import logisticspipes.utils.font.renderer.TokenHeader;
 import logisticspipes.utils.font.renderer.TokenLineBreak;
 
 public class TextBox {
@@ -23,13 +25,14 @@ public class TextBox {
 		this.gui = gui;
 		this.x = x;
 		this.y = y;
-		this.width = width;
+		this.width = width - 2;
 		this.height = height;
 		this.tokens = tokens;
 		drawnHeight = calculateDrawnHeight();
 		needsScroll = (drawnHeight > height);
 	}
 
+	@SuppressWarnings("Duplicates")
 	public void draw(float scroll) {
 		int xOffset = 0;
 		int yOffset = 8;
@@ -49,9 +52,27 @@ public class TextBox {
 				xOffset = 0;
 				yOffset += 10;
 			}
+			if(token.getClass().equals(TokenHeader.class)) {
+				for (IToken hToken : ((TokenHeader)token).getTokens()){
+					if (hToken.getClass().equals(Token.class)) {
+						if (xOffset + gui.fr.offsetToken(token).x > width) {
+							xOffset = 0;
+							yOffset += 10;
+						}
+						temp = gui.fr.drawToken((Token) hToken, x + xOffset, y + yOffset - ySliderOffset);
+						xOffset += temp.x;
+						yOffset += temp.y;
+					}
+					if (hToken.getClass().equals(TokenLineBreak.class)) {
+						xOffset = 0;
+						yOffset += 0;
+					}
+				}
+				yOffset += 3;
+				gui.fr.lineDrawHorizontal(x , y + yOffset + ySliderOffset, width, 1, Color.WHITE);
+			}
 			//Images
 			//Links
-			//Headers
 		}
 	}
 

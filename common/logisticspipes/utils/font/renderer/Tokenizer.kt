@@ -2,247 +2,230 @@ package logisticspipes.utils.font.renderer
 
 import logisticspipes.LogisticsPipes
 import java.awt.Color
-import java.awt.Image
 
 /*
  * TODO (This will not be pushed to the main repo, it is merely for personal tracking :P)
- *  - Add cases for underlined and for ~~strikethrough~~
- *  - Add Image, Link and Color parsing
+ *  - Add Image and Link
  *  - Add Item Translated name support
  */
 
 object Tokenizer {
 
-    var current = mutableListOf<TokenTag>()
-    private var currentColor = Color.WHITE
     var definition = Definition.None
+    var currentColor = Color.RED
+    var current = mutableListOf<TokenTag>()
+    private lateinit var temporaryHeader: TokenHeader
 
     fun tokenize(str: String): Array<IToken> {
-        var strC = str.toCharArray()
-        var string = StringBuilder()
-        var tokens = mutableListOf<IToken>()
+        val strC = str.toCharArray()
+        val string = StringBuilder()
+        val tokens = mutableListOf<IToken>()
         strC.forEachIndexed { index, c ->
-            if (definition == Tokenizer.Definition.None) when (c) {
-                '\n' -> string.handleLineBreak(c, index, strC, tokens)
-                '_', '*' -> string.handleAsteriskAndUnderscore(c, index, strC, tokens)
-                '[' -> string.handleSquareParenthesis(c, index, strC, tokens)
-                '~' -> string.handleTilda(c, index, strC, tokens)
-                else -> string.handleDefault(c, index, strC, tokens)
-            } else when (c) {
-                '[', ']' -> string.handleSquareParenthesis(c, index, strC, tokens)
-                else -> string.handleDefault(c, index, strC, tokens)
-            }
+            handleCharacter(c, index, tokens, strC, string)
         }
         return tokens.toTypedArray()
     }
 
-    private fun StringBuilder.handleLineBreak(c: Char, index: Int, strC: CharArray, tokens: MutableList<IToken>) {
-        if (strC.prevChar(index) == ' ') {
-            if (strC.prevChar(index - 1) == ' ') {
-                tokens.add(TokenLineBreak())
-            } else {
-                tokens.add(Token("", current.toMutableList(), currentColor))
+    private fun StringBuilder.handleSpecialDefinitions(c: Char, index: Int, tokens: MutableList<IToken>, strC: CharArray) {
+        fun startDefinition(def: Definition){
+            if(isNotEmpty() && this[lastIndex] == c && c != ' ') deleteCharAt(lastIndex)
+            if (isNotEmpty()){
+                if (current.contains(TokenTag.Colored)){
+                    tokens.add(Token(toString(), current.toMutableList(), clr = currentColor))
+                }else{
+                    tokens.add(Token(toString(), current.toMutableList()))
+                }
             }
-        } else {
-            tokens.add(Token(" ", current.toMutableList(), currentColor))
+            clear()
+            definition = def
         }
-        clear()
+
+        when(c){
+            '[' -> when(strC.prevChar(index)){
+                '+' -> startDefinition(Definition.Color)
+                else -> Unit
+            }
+            ']' -> when(definition){
+                //Tokenizer.Definition.Color -> //closeColor()
+            }
+        }
     }
 
-    private fun StringBuilder.handleParenthesis(c: Char, index: Int, strC: CharArray, tokens: MutableList<IToken>){
-        fun StringBuilder.handleImage(){
-            var temp = toString().split("|")
-            tokens.add(TokenImage(temp[0], temp[1]))
-            definition = Tokenizer.Definition.None
+    private fun StringBuilder.handleSpecialTag(c: Char, index: Int, tokens: MutableList<IToken>, strC: CharArray) {
+        fun StringBuilder.handleLineBreak() {
+            when {
+                definition == Tokenizer.Definition.Header -> {
+                    definition = Definition.AddHeader
+                }
+                strC.isAfterTwoSpaces(index) -> {
+                    tokens.add(TokenLineBreak())
+                }
+                strC.isAfterOneSpace(index) -> Unit
+                else -> {
+                    append(' ')
+                    tokens.add(Token(toString(), current.toMutableList()))
+                }
+            }
             clear()
         }
 
-        if(c == ')'){
-            when (definition){
-                Tokenizer.Definition.None, Tokenizer.Definition.Color -> Unit
-                Tokenizer.Definition.Image -> handleImage()
+        fun StringBuilder.handleSingleCharacter(tag: TokenTag) {
+            fun toggleTag() {
+                if (isNotEmpty()) tokens.add(Token(toString(), current.toMutableList()))
+                when {
+                    current.contains(tag) -> current.remove(tag)
+                    else -> current.add(tag)
+                }
+                clear()
+            }
+
+            when (c) {
+                strC.nextChar(index) -> Unit
+                else -> toggleTag()
             }
         }
-    }
 
-    private fun StringBuilder.handleSquareParenthesis(c: Char, index: Int, strC: CharArray, tokens: MutableList<IToken>) {
-        fun StringBuilder.handleColor() {
-            fun opener() {
-                deleteCharAt(lastIndex)
-                definition = Definition.Color
-                if (isNotEmpty()) tokens.add(Token(toString(), current.toMutableList(), currentColor ?: Color.WHITE))
+        fun StringBuilder.handleDoubleCharacter(tag: TokenTag, singleTag: TokenTag) {
+            fun toggleTag() {
+                if (isNotEmpty()){
+                    if (current.contains(TokenTag.Colored)){
+                        tokens.add(Token(toString(), current.toMutableList(), clr = currentColor))
+                    }else{
+                        tokens.add(Token(toString(), current.toMutableList()))
+                    }
+                }
+                when {
+                    current.contains(tag) -> current.remove(tag)
+                    else -> current.add(tag)
+                }
                 clear()
             }
 
-            fun closer() {
-                currentColor = toString().toColor()
-                definition = Tokenizer.Definition.None
-                clear()
-            }
-
-            if (c == '[') opener() else closer()
-        }
-
-        fun StringBuilder.handleImage(){
-            fun opener(){
-                deleteCharAt(lastIndex)
-                definition = Definition.Image
-                if (isNotEmpty()) tokens.add(Token(toString(), current.toMutableList(), currentColor ?: Color.WHITE))
-                clear()
-            }
-
-            fun closer(){
-                append('|')
-            }
-
-            if (c == '[') opener() else closer()
-        }
-
-        if (c == '[') {
-            if (definition == Tokenizer.Definition.None) when (strC.prevChar(index)) {
-                '\\' -> handleDefault(c, index, strC, tokens)
-                '+' -> handleColor()
-                '!' -> handleImage()
-            }
-        } else if (c == ']') {
-            if (definition != Tokenizer.Definition.None && strC.prevChar(index) != '\\') when (definition) {
-                Tokenizer.Definition.None -> handleDefault(c, index, strC, tokens)
-                Tokenizer.Definition.Color -> handleColor()
-                Tokenizer.Definition.Image -> Unit
-            }
-        }
-    }
-
-    /*
-    * Handler for the '~' character, that leads to the Strikethrough text format.
-    * */
-    private fun StringBuilder.handleTilda(c: Char, index: Int, strC: CharArray, tokens: MutableList<IToken>) {
-        fun StringBuilder.handleStrikethrough() {
-            fun opener() {
-                deleteCharAt(lastIndex)
-                if (isNotEmpty()) tokens.add(Token(toString(), current.toMutableList(), currentColor ?: Color.WHITE))
-                current.add(Tokenizer.TokenTag.Strikethrough)
-                clear()
-            }
-
-            fun closer() {
-                deleteCharAt(lastIndex)
-                if (isNotEmpty()) tokens.add(Token(toString(), current.toMutableList(), currentColor ?: Color.WHITE))
-                current.remove(Tokenizer.TokenTag.Strikethrough)
-                clear()
-            }
-
-            if (!current.contains(Tokenizer.TokenTag.Strikethrough)) opener() else closer()
-        }
-
-        fun StringBuilder.handleUnderline() {
-            fun opener() {
-                if (isNotEmpty()) tokens.add(Token(toString(), current.toMutableList(), currentColor ?: Color.WHITE))
-                current.add(Tokenizer.TokenTag.Underline)
-                clear()
-            }
-
-            fun closer() {
-                if (isNotEmpty()) tokens.add(Token(toString(), current.toMutableList(), currentColor ?: Color.WHITE))
-                current.remove(Tokenizer.TokenTag.Underline)
-                clear()
-            }
-
-            if (!current.contains(Tokenizer.TokenTag.Underline)) opener() else closer()
-        }
-
-        when (strC.nextChar(index)) {
-            c -> handleDefault(c, index, strC, tokens)
-            else -> {
-                when (strC.prevChar(index)) {
-                    c -> handleStrikethrough()
-                    else -> handleUnderline()
+            fun toggleTags(){
+                toggleTag()
+                when {
+                    current.contains(singleTag) -> current.remove(singleTag)
+                    else -> current.add(singleTag)
                 }
             }
+
+            when (c) {
+                strC.nextChar(index) -> Unit
+                strC.prevChar(index) -> {
+                    if (strC.prevChar(index-1) == c){
+                        toggleTags()
+                    }else{
+                        toggleTag()
+                    }
+                }
+                else -> handleSingleCharacter(singleTag)
+            }
+        }
+
+        fun StringBuilder.handleSpecialHeader() {
+            fun startHeader() {
+                if (isNotEmpty()) {
+                    if (current.contains(TokenTag.Colored)){
+                        tokens.add(Token(toString(), current.toMutableList(), clr = currentColor))
+                    }else{
+                        tokens.add(Token(toString(), current.toMutableList()))
+                    }
+                }
+                clear()
+                temporaryHeader = TokenHeader()
+                definition = Tokenizer.Definition.Header
+            }
+
+            if (strC.prevChar(index) == c) startHeader()
+        }
+
+        when (c) {
+            '\n' -> this.handleLineBreak()
+            '_', '*' -> handleDoubleCharacter(TokenTag.Bold, TokenTag.Italic)
+            '~' -> handleDoubleCharacter(TokenTag.Strikethrough, TokenTag.Underline)
+            '^' -> handleDoubleCharacter(TokenTag.Colored, TokenTag.Shadow)
+            '#' -> handleSpecialHeader()
+            else -> Unit
         }
     }
 
-    /*
-     Handler for the '*' and '_' characters which can lead to either Bold or Italic formatting depending on the situation.
-     */
-    private fun StringBuilder.handleAsteriskAndUnderscore(c: Char, index: Int, strC: CharArray, tokens: MutableList<IToken>) {
-        fun StringBuilder.handleBold() {
-            fun opener() {
-                this.deleteCharAt(this.lastIndex)
-                if (this.isNotEmpty()) tokens.add(Token(this.toString(), current.toMutableList(), currentColor ?: Color.WHITE))
-                current.add(Tokenizer.TokenTag.Bold)
-                this.clear()
-            }
-
-            fun closer() {
-                this.deleteCharAt(this.lastIndex)
-                if (this.isNotEmpty()) tokens.add(Token(this.toString(), current.toMutableList(), currentColor ?: Color.WHITE))
-                current.remove(Tokenizer.TokenTag.Bold)
-                this.clear()
-            }
-
-            if (!current.contains(Tokenizer.TokenTag.Bold)) opener() else closer()
-        }
-
-        fun StringBuilder.handleItalic() {
-            fun opener() {
-                if (this.isNotEmpty()) tokens.add(Token(this.toString(), current.toMutableList(), currentColor ?: Color.WHITE))
-                current.add(Tokenizer.TokenTag.Italic)
-                this.clear()
-            }
-
-            fun closer() {
-                if (this.isNotEmpty()) tokens.add(Token(this.toString(), current.toMutableList(), currentColor ?: Color.WHITE))
-                current.remove(Tokenizer.TokenTag.Italic)
-                this.clear()
-            }
-
-            if (!current.contains(Tokenizer.TokenTag.Italic)) opener() else closer()
-        }
-        when (strC.nextChar(index)) {
-            c -> handleDefault(c, index, strC, tokens)
-            else -> {
-                when (strC.prevChar(index)) {
-                    c -> handleBold()
-                    else -> handleItalic()
+    private fun StringBuilder.handleTextDefault(c: Char, index: Int, tokens: MutableList<IToken>, strC: CharArray) {
+        append(c)
+        if ((c == ' ' && strC.prevChar(index) != ' ') || index == lastIndex) {
+            if (isNotEmpty()){
+                if (current.contains(TokenTag.Colored)){
+                    tokens.add(Token(toString(), current.toMutableList(), clr = currentColor))
+                }else{
+                    tokens.add(Token(toString(), current.toMutableList()))
                 }
             }
+            clear()
         }
     }
 
-    /*
-     Handler for the default case:
-     Runs if no Markdown tags are detected within the current character and the ones before and after.
-     */
-    private fun StringBuilder.handleDefault(c: Char, index: Int, strC: CharArray, tokens: MutableList<IToken>) {
-        if (c != '\\') this.append(c)
-        else if (strC.prevChar(index) == '\\') this.append(c)
-        if (index == strC.lastIndex || c == ' ') {
-            tokens.add(Token(this.toString(), current, currentColor ?: Color.WHITE))
-            this.clear()
+    private fun handleAddHeader(tokens: MutableList<IToken>){
+        tokens.add(temporaryHeader.clone())
+        tokens.add(TokenLineBreak())
+        temporaryHeader = TokenHeader()
+        definition = Definition.None
+    }
+
+    private fun handleCharacter(c: Char, index: Int, tokens: MutableList<IToken>, strC: CharArray, string: StringBuilder) {
+        when (definition) {
+            Tokenizer.Definition.None -> when (c) {
+                '\\', '_', '*', '~', '^', '\n', '#' -> if (strC.isEscaped(index)) string.handleTextDefault(c, index, tokens, strC) else string.handleSpecialTag(c, index, tokens, strC)
+                '[', ']', '(', ')', '<', '>' -> if (strC.isEscaped(index)) string.handleTextDefault(c, index, tokens, strC) else string.handleSpecialDefinitions(c, index, tokens, strC)
+                else -> string.handleTextDefault(c, index, tokens, strC)
+            }
+            Tokenizer.Definition.Header -> when (c) {
+                '\\', '_', '*', '~', '^', '\n', '#' -> if (strC.isEscaped(index)) string.handleTextDefault(c, index, temporaryHeader.tokens, strC) else string.handleSpecialTag(c, index, temporaryHeader.tokens, strC)
+                else -> string.handleTextDefault(c, index, temporaryHeader.tokens, strC)
+            }
+            Tokenizer.Definition.AddHeader -> handleAddHeader(tokens)
         }
     }
 
     /*
      Returns the next Char in the array:
-     If the previous index is out of bounds returns an indifferent character, in this case: ' '
+     If the previous index is out of bounds returns an indifferent character, in this case: 'a'
      If said character was escaped using '\' the function returns the same indifferent character as before.
      */
     private fun CharArray.prevChar(index: Int): Char {
-        if (index == 0) return ' '
-        if ((index - 1 != 0) && this[index - 2] == '\\') return ' '
-        return this[index - 1]
+        return if (index == 0 || (index > 1 && this[index - 1] == '\\')) 'a' else this[index - 1]
     }
 
     /*
     Returns the next Char in the array:
-    If the next index is out of bounds returns an indifferent character, in this case: ' '
+    If the next index is out of bounds returns an indifferent character, in this case: 'a'
     */
     private fun CharArray.nextChar(index: Int): Char {
-        if (index == this.lastIndex) return ' '
-        return this[index + 1]
+        return if (index == lastIndex) 'a' else this[index + 1]
     }
 
+    /*
+     Checks if the previous character is a backslash and if the one prior to that is also a backslash, because if the backslash itself is escaped it does not escape the current character.
+     */
+    private fun CharArray.isEscaped(index: Int): Boolean {
+        return (prevChar(index) == '\\') && (prevChar(index - 1) != '\\')
+    }
+
+    /*
+     Checks if the two previous characters are spaces.
+     */
+    private fun CharArray.isAfterTwoSpaces(index: Int): Boolean {
+        return ((isAfterOneSpace(index)) && (isAfterOneSpace(index - 1)))
+    }
+
+    /*
+     Checks if the previous character is a space
+     */
+    private fun CharArray.isAfterOneSpace(index: Int): Boolean {
+        return (prevChar(index) == ' ')
+    }
+
+    /*
+     Converts a string of type #hex or a color name to a valid non-null Color object.
+     */
     private fun String.toColor(): Color {
         if (this.first() == '#') return Color(this.substring(1, lastIndex).toInt(16))
         val field = Class.forName("java.awt.Color").getField(this.toUpperCase())
@@ -262,13 +245,20 @@ object Tokenizer {
         Italic,
         Bold,
         Strikethrough,
-        Underline
+        Underline,
+        Shadow,
+        Colored
+    }
+
+    enum class Parsing {
+        Text
     }
 
     enum class Definition {
         None,
-        Color,
-        Image
+        Header,
+        AddHeader,
+        Color
     }
 }
 

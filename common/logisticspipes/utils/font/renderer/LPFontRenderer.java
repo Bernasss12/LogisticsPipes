@@ -2,6 +2,7 @@ package logisticspipes.utils.font.renderer;
 
 import java.awt.Color;
 import java.awt.Point;
+import java.util.List;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BufferBuilder;
@@ -22,6 +23,7 @@ public class LPFontRenderer {
 
 	private Minecraft mc;
 	@Getter
+	private Color shadowColor = new Color(0x3C3F41);
 	private BDF fontPlain;
 	private BDF fontBold;
 	private FontWrapper wrapperPlain;
@@ -85,37 +87,35 @@ public class LPFontRenderer {
 		return glyph.getDWidthX();
 	}
 
-	protected Point offset(char c, FontWrapper wrapper, boolean italics) {
+	protected Point offset(char c, FontWrapper wrapper) {
 		BDF.IGlyph glyph = wrapper.getGlyph(c);
 		return new Point(glyph != null ? glyph.getDWidthX() : 0, 0);
 	}
 
 	private int drawChar(char c, int x, int y, Color color, FontWrapper wrapper, boolean underline, boolean strikethrough, boolean italics, boolean shadow) {
 		BDF.IGlyph glyph = wrapper.getGlyph(c);
-		if (strikethrough) {
-			lineDrawHorizontal(x, y - 3, glyph.getDWidthX(), 1, color);
-		}
-		if (underline) {
-			lineDrawHorizontal(x, y + 1, glyph.getDWidthX(), 1, color);
-		}
 		if (shadow) {
-			draw(c, x + 1, y + 1, new Color(0x3C3F41), wrapper, italics);
+			draw(c, x + 1, y + 1, shadowColor, wrapper, italics);
+			if (strikethrough) lineDrawHorizontal(x + 1, y - 2, glyph.getDWidthX() + (italics?1:0), 1, shadowColor);
+			if (underline) lineDrawHorizontal(x , y + 2, glyph.getDWidthX() + (italics?1:0), 1, shadowColor);
 		}
+		if (strikethrough)lineDrawHorizontal(x, y - 3, glyph.getDWidthX() + (italics?1:0), 1, color);
+		if (underline)lineDrawHorizontal(x - 1, y + 1, glyph.getDWidthX() + (italics?1:0), 1, color);
 		return draw(c, x, y, color, wrapper, italics);
 	}
 
-	public int drawString(String string, int x, int y, Color color, FontWrapper wrapper, boolean underline, boolean strikethrough, boolean italics) {
+	public int drawString(String string, int x, int y, Color color, FontWrapper wrapper, boolean underline, boolean strikethrough, boolean italics, boolean shadow) {
 		int xOffset = 0;
 		for (char c : string.toCharArray()) {
-			xOffset += drawChar(c, x + xOffset, y, color, wrapper, underline, strikethrough, italics, false);
+			xOffset += drawChar(c, x + xOffset, y, color, wrapper, underline, strikethrough, italics, shadow);
 		}
-		return xOffset + (italics ? 2 : 0);
+		return xOffset + (italics ? 1 : 0);
 	}
 
 	public Point offsetString(String string, FontWrapper wrapper, boolean italics) {
 		int xOffset = 0;
 		for (char c : string.toCharArray()) {
-			xOffset += offset(c, wrapper, italics).x;
+			xOffset += offset(c, wrapper).x;
 		}
 		return new Point(xOffset + (italics ? 2 : 0), 0);
 	}
@@ -125,22 +125,20 @@ public class LPFontRenderer {
 	}
 
 	public int drawStringWithShadow(String string, int x, int y, Color color, boolean bold, boolean underline, boolean strikethrough, boolean italics) {
-		int xOffset = 0;
-		FontWrapper wrapper = !bold ? wrapperPlain : wrapperBold;
-		for (char c : string.toCharArray()) {
-			xOffset += drawChar(c, x + xOffset, y, color, wrapper, underline, strikethrough, italics, true);
-		}
-		return xOffset + (italics ? 2 : 0);
+		FontWrapper wrapper = bold?wrapperBold:wrapperPlain;
+		return drawString(string, x, y, color, wrapper, underline, strikethrough, italics, true);
 	}
 
 	public Point drawToken(Token token, int x, int y) {
 		FontWrapper wrapper = token.getTags().contains(Tokenizer.TokenTag.Bold) ? wrapperBold : wrapperPlain;
-		boolean italics = token.getTags().contains(Tokenizer.TokenTag.Italic);
-		boolean strikethrough = token.getTags().contains(Tokenizer.TokenTag.Strikethrough);
-		boolean underline = token.getTags().contains(Tokenizer.TokenTag.Underline);
+		List<Tokenizer.TokenTag> tags = token.getTags();
+		boolean italics = tags.contains(Tokenizer.TokenTag.Italic);
+		boolean strikethrough = tags.contains(Tokenizer.TokenTag.Strikethrough);
+		boolean underline = tags.contains(Tokenizer.TokenTag.Underline);
+		boolean shadow = tags.contains(Tokenizer.TokenTag.Shadow);
 		int yOffset = token.getClass().equals(TokenLineBreak.class) ? 10 : 0;
 		Color color = token.getColor();
-		return new Point(drawString(token.getStr(), x, y, color, wrapper, underline, strikethrough, italics), yOffset);
+		return new Point(drawString(token.getStr(), x, y, color, wrapper, underline, strikethrough, italics, shadow), yOffset);
 	}
 
 	public Point offsetToken(IToken token) {
