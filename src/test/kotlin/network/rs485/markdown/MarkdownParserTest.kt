@@ -542,7 +542,7 @@ internal class MarkdownParserTest {
         val paragraphs = parseParagraphs("![$text](menu://$link)")
 
         val expectedParagraphs = listOf(
-                MenuParagraph(text, link)
+                SpecialParagraph(text, link)
         )
         assertEquals(expectedParagraphs, paragraphs)
     }
@@ -572,7 +572,7 @@ internal class MarkdownParserTest {
 
     @Test
     fun `parse a couple of menu tags`() {
-        val expectedParagraphs = (1..5).map { n -> MenuParagraph("Test $n", "test_menu_$n") }.toList()
+        val expectedParagraphs = (1..5).map { n -> SpecialParagraph("Test $n", "test_menu_$n") }.toList()
         val str = expectedParagraphs.joinToString(separator = "\n") { "![${it.description}](menu://${it.link})" }
 
         val paragraphs = parseParagraphs(str)

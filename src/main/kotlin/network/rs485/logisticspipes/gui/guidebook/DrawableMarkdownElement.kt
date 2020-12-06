@@ -59,18 +59,18 @@ internal val HEADER_LEVELS = listOf(2.0, 1.80, 1.60, 1.40, 1.20, 1.00)
  * @param textTokens this is the alt text, only used in case the image provided via the URL fails to load.
  *
  */
-data class DrawableImageParagraph(val textTokens: List<DrawableWord>, val imageParameters: String) : IDrawable {
+data class DrawableImageParagraph(val text: String, val imageParameters: String) : IDrawable {
     // TODO
-    private val image: ResourceLocation
-    private var imageAvailable: Boolean
+    //private val image: ResourceLocation
+    //private var imageAvailable: Boolean
 
     override val area = Rectangle(0, 0)
     override var isHovered = false
 
     init {
-        val parameters = imageParameters.split(" ")
-        image = ResourceLocation(LPConstants.LP_MOD_ID, parameters.first())
-        imageAvailable = true
+       // val parameters = imageParameters.split(" ")
+        //image = ResourceLocation(LPConstants.LP_MOD_ID, parameters.first())
+        //imageAvailable = true
     }
 
     override fun setPos(x: Int, y: Int, maxWidth: Int): Int {
@@ -102,12 +102,12 @@ data class DrawableHorizontalLine(val thickness: Int, val padding: Int = 3) : ID
 /**
  * List token, has several items that are shown in a list.
  */
-data class DrawableListParagraph(val entries: List<List<DrawableWord>>) : IDrawable {
+data class DrawableListParagraph(val listName: String, val entries: Map<String, List<String>>) : IDrawable {
     override val area: Rectangle = Rectangle()
     override var isHovered = false
 
     override fun setPos(x: Int, y: Int, maxWidth: Int): Int {
-        TODO("Not yet implemented")
+        return 0
     }
 }
 
@@ -127,8 +127,24 @@ private fun toDrawable(paragraph: Paragraph): IDrawable = when (paragraph) {
     is RegularParagraph -> DrawableRegularParagraph(toDrawables(paragraph.elements, 1.0))
     is HeaderParagraph -> DrawableHeaderParagraph(toDrawables(paragraph.elements, getScaleFromLevel(paragraph.headerLevel)), paragraph.headerLevel)
     is HorizontalLineParagraph -> DrawableHorizontalLine(2)
-    is MenuParagraph -> DrawableMenuParagraph(toDrawables(splitToInlineElements(paragraph.description), getScaleFromLevel(3)), toMenuGroups(definingPage.metadata.menu[paragraph.link]
-            ?: error("Requested menu ${paragraph.link}, not found."))) // TODO have the current page path here to get the proper menu
+    is SpecialParagraph -> {
+        val splitLink = paragraph.link.split("://")
+        val typeToken: String = splitLink.first()
+        val identifier: String = splitLink.last()
+        when(typeToken){
+            "menu" -> {
+                DrawableMenuParagraph(toDrawables(splitToInlineElements(paragraph.description), getScaleFromLevel(3)), toMenuGroups(definingPage.metadata.menu[identifier]
+                        ?: error("Requested menu ${paragraph.link}, not found.")))
+            }
+            "list" -> {
+                DrawableListParagraph(paragraph.description,definingPage.metadata.menu[identifier]?: error("Requested list ${identifier}, not found."))
+            }
+            "img" -> {
+                DrawableImageParagraph(paragraph.description, identifier)
+            }
+            else -> error("Requested $typeToken, is not a valid type of SpecialParagraph.")
+        }
+    } // TODO have the current page path here to get the proper menu
 }
 
 fun toMenuGroups(groups: Map<String, List<String>>): List<DrawableMenuTileGroup> {

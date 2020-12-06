@@ -43,7 +43,7 @@ import kotlin.collections.ArrayList
 
 object MarkdownParser {
     private val htmlBreakRegex = Regex("<br(\\s*/)?>")
-    private val menuLinkRegex = Regex("!\\[([^]]*(?:\\\\][^]]*)*)]\\(menu://(\\w+)\\)")
+    private val menuLinkRegex = Regex("!\\[([^]]*(?:\\\\][^]]*)*)]\\(([^)]+)\\)")
 
     internal fun splitToInlineElements(inputChars: CharSequence): List<InlineElement> {
         // TODO: parse colors, links, formatting
@@ -140,7 +140,7 @@ object MarkdownParser {
                     completeParagraph()
                     val description = menuLinkRegexMatch!!.groups[1]!!.value
                     val link = menuLinkRegexMatch!!.groups[2]!!.value
-                    paragraphs.add(MenuParagraph(description, link))
+                    paragraphs.add(SpecialParagraph(description, link))
                 }
                 // TODO: add ListParagraph
                 else -> dumpLineToBuffer()
