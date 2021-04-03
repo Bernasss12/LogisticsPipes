@@ -38,6 +38,7 @@ package network.rs485.logisticspipes.inventory
 
 import logisticspipes.interfaces.IClientInformationProvider
 import logisticspipes.proxy.computers.interfaces.ILPCCTypeHolder
+import logisticspipes.utils.ISimpleInventoryEventHandler
 import logisticspipes.utils.item.ItemIdentifier
 import logisticspipes.utils.item.ItemIdentifierStack
 import net.minecraft.inventory.IInventory
@@ -48,4 +49,6 @@ interface IItemIdentifierInventory : IInventory, ILPCCTypeHolder, IClientInforma
     val itemsAndCount: Map<ItemIdentifier, Int>
     fun containsItem(item: ItemIdentifier?): Boolean
     fun handleItemIdentifierList(_allItems: Collection<ItemIdentifierStack>)
+    fun addListener(listener: ISimpleInventoryEventHandler)
+    fun removeListener(listener: ISimpleInventoryEventHandler)
 }
