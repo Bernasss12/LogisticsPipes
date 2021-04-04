@@ -387,6 +387,7 @@ public class ItemIdentifierInventory
 		}
 	}
 
+	@Override
 	public int itemCount(@Nonnull final ItemIdentifier item) {
 		return _contentsMap.getOrDefault(item, 0);
 	}

@@ -54,4 +54,5 @@ interface IItemIdentifierInventory : IInventory, ILPCCTypeHolder, IClientInforma
     fun containsUndamagedItem(item: ItemIdentifier): Boolean
     fun containsExcludeNBTItem(item: ItemIdentifier): Boolean
     fun containsUndamagedExcludeNBTItem(item: ItemIdentifier): Boolean
+    fun itemCount(item: ItemIdentifier): Int
 }
