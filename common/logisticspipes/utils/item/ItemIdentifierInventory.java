@@ -573,4 +573,10 @@ public class ItemIdentifierInventory
 		return ccTypeHolder;
 	}
 
+	@Nonnull
+	@Override
+	public Iterable<Pair<ItemIdentifierStack, Integer>> contents() {
+		return this;
+	}
+
 }
