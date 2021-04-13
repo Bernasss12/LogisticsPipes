@@ -40,6 +40,8 @@ package network.rs485.logisticspipes.gui.guidebook
 import logisticspipes.utils.MinecraftColor
 import logisticspipes.utils.string.StringUtils
 import net.minecraft.client.Minecraft
+import network.rs485.logisticspipes.gui.HorizontalAlignment
+import network.rs485.logisticspipes.gui.VerticalAlignment
 import network.rs485.logisticspipes.util.math.Rectangle
 
 private val homeButtonTexture = Rectangle(16, 64, 24, 32)
@@ -48,7 +50,7 @@ private val homeIconTexture = Rectangle(128, 0, 16, 16)
 /*
 * Position on the button is set based on it's rightmost and where it needs to connect at the bottom.
 */
-class HomeButton(x: Int, y: Int, onClickAction: (Int) -> Boolean) : LPGuiButton(1, x - 24, y - 24, homeButtonTexture.roundedWidth, homeButtonTexture.roundedHeight) {
+class HomeButton2(x: Int, y: Int, onClickAction: (Int) -> Boolean) : LPGuiButton2(1, x - 24, y - 24, homeButtonTexture.roundedWidth, homeButtonTexture.roundedHeight) {
     private val homeIconBody: Rectangle
     override val bodyTrigger = Rectangle(1, 1, 22, 22)
 
@@ -70,8 +72,8 @@ class HomeButton(x: Int, y: Int, onClickAction: (Int) -> Boolean) : LPGuiButton(
                 drawTooltip(
                     x = body.roundedRight,
                     y = body.roundedTop,
-                    horizontalAlign = GuiGuideBook.HorizontalAlignment.RIGHT,
-                    verticalAlign = GuiGuideBook.VerticalAlignment.BOTTOM
+                    horizontalAlign = HorizontalAlignment.RIGHT,
+                    verticalAlign = VerticalAlignment.BOTTOM
                 )
             }
             GuiGuideBook.drawStretchingRectangle(body, zLevel, homeButtonTexture, false, MinecraftColor.WHITE.colorCode)

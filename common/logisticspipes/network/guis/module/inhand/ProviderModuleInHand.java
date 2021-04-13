@@ -1,7 +1,5 @@
 package logisticspipes.network.guis.module.inhand;
 
-import net.minecraft.entity.player.EntityPlayer;
-
 import logisticspipes.items.ItemModule;
 import logisticspipes.modules.LogisticsModule;
 import logisticspipes.modules.ModuleProvider;
@@ -10,6 +8,9 @@ import logisticspipes.network.abstractguis.ModuleInHandGuiProvider;
 import logisticspipes.utils.StaticResolve;
 import logisticspipes.utils.gui.DummyContainer;
 import logisticspipes.utils.gui.DummyModuleContainer;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.ItemStack;
+import network.rs485.logisticspipes.gui.ProviderGui;
 
 @StaticResolve
 public class ProviderModuleInHand extends ModuleInHandGuiProvider {
@@ -20,11 +21,14 @@ public class ProviderModuleInHand extends ModuleInHandGuiProvider {
 
 	@Override
 	public Object getClientGui(EntityPlayer player) {
-		LogisticsModule module = ItemModule.getLogisticsModule(player, getInvSlot());
+		final LogisticsModule module = ItemModule.getLogisticsModule(player, getInvSlot());
 		if (!(module instanceof ModuleProvider)) {
 			return null;
 		}
-		return new logisticspipes.gui.modules.GuiProvider(player.inventory, (ModuleProvider) module);
+		ItemStack usedItemStack = (player.getHeldItemMainhand().getItem() instanceof ItemModule) ?
+				player.getHeldItemMainhand() : (player.getHeldItemOffhand().getItem() instanceof ItemModule) ?
+				player.getHeldItemOffhand() : ItemStack.EMPTY;
+		return new ProviderGui(player.inventory, (ModuleProvider) module, usedItemStack);
 	}
 
 	@Override
@@ -33,7 +37,7 @@ public class ProviderModuleInHand extends ModuleInHandGuiProvider {
 		if (!(dummy.getModule() instanceof ModuleProvider)) {
 			return null;
 		}
-		dummy.setInventory(((ModuleProvider) dummy.getModule()).getFilterInventory());
+		dummy.setInventory(((ModuleProvider) dummy.getModule()).filterInventory);
 		dummy.addNormalSlotsForPlayerInventory(18, 97);
 
 		int xOffset = 72;

@@ -39,8 +39,8 @@ package network.rs485.logisticspipes.gui.guidebook
 
 import network.rs485.logisticspipes.util.math.Rectangle
 
-open class DrawableParagraph : Drawable() {
-    private val preRenderCallbacks = mutableSetOf<(mouseX: Int, mouseY: Int, visibleArea: Rectangle) -> Unit>()
+abstract class DrawableParagraph : Drawable, MouseInteractable {
+    private val preRenderCallbacks = mutableSetOf<(mouseX: Float, mouseY: Float, visibleArea: Rectangle) -> Unit>()
 
     override fun setPos(x: Int, y: Int): Int {
         relativeBody.setPos(x, y)
@@ -60,16 +60,24 @@ open class DrawableParagraph : Drawable() {
         return relativeBody.roundedHeight
     }
 
-    open fun drawChildren(mouseX: Int, mouseY: Int, delta: Float, visibleArea: Rectangle) {}
+    /**
+     * This function is responsible check if the mouse is over the object
+     * @param mouseX        X position of the mouse (absolute, screen)
+     * @param mouseY        Y position of the mouse (absolute, screen)
+     */
+    override fun isMouseHovering(mouseX: Float, mouseY: Float): Boolean =
+            absoluteBody.contains(mouseX, mouseY)
+
+    open fun drawChildren(mouseX: Float, mouseY: Float, delta: Float, visibleArea: Rectangle) {}
 
     /**
      * Registers a preRender callback to call on preRender.
      */
-    fun registerPreRenderCallback(callable: (mouseX: Int, mouseY: Int, visibleArea: Rectangle) -> Unit) {
+    fun registerPreRenderCallback(callable: (mouseX: Float, mouseY: Float, visibleArea: Rectangle) -> Unit) {
         preRenderCallbacks.add(callable)
     }
 
-    open fun preRender(mouseX: Int, mouseY: Int, visibleArea: Rectangle) =
+    open fun preRender(mouseX: Float, mouseY: Float, visibleArea: Rectangle) =
         preRenderCallbacks.forEach { function ->
             function.invoke(mouseX, mouseY, visibleArea)
         }

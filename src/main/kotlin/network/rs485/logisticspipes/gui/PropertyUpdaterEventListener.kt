@@ -35,52 +35,44 @@
  * SOFTWARE.
  */
 
-package network.rs485.logisticspipes.gui.guidebook
+package network.rs485.logisticspipes.gui
 
-import net.minecraft.client.Minecraft
-import net.minecraft.client.gui.GuiButton
-import network.rs485.logisticspipes.util.math.Rectangle
+import logisticspipes.proxy.MainProxy
+import net.minecraftforge.event.entity.player.PlayerContainerEvent
+import net.minecraftforge.fml.common.eventhandler.SubscribeEvent
+import network.rs485.logisticspipes.module.PropertyModule
+import java.util.*
 
-open class LPGuiButton(id: Int, x: Int, y: Int, width: Int, height: Int) : GuiButton(id, 24, 24, "") {
-    val body = Rectangle(x, y, width, height)
+@Suppress("unused")
+object PropertyUpdaterEventListener {
+    private val propertyUpdaters: ArrayList<PropertyUpdater> = ArrayList()
 
-    // Position relative to body.
-    open val bodyTrigger = Rectangle(width, height)
-    private var onClickAction: ((Int) -> Boolean)? = null
-
-    override fun mousePressed(mc: Minecraft, mouseX: Int, mouseY: Int): Boolean = isHovered(mouseX, mouseY)
-
-    override fun isMouseOver(): Boolean = hovered
-
-    override fun getButtonWidth(): Int = body.roundedWidth
-
-    override fun setWidth(width: Int) {
-        body.setSize(newWidth = width, body.roundedHeight)
-    }
-
-    override fun getHoverState(mouseOver: Boolean): Int = if (!enabled) 2 else if (hovered) 1 else 0
-
-    internal fun isHovered(mouseX: Int, mouseY: Int): Boolean =
-        enabled && visible && bodyTrigger.translated(body.x0, body.y0).contains(mouseX, mouseY)
-
-    open fun setPos(newX: Int, newY: Int) {
-        body.setPos(newX, newY)
-    }
-
-    open fun setOnClickAction(newOnClickAction: (Int) -> Boolean): LPGuiButton {
-        onClickAction = newOnClickAction
-        return this
-    }
-
-    open fun click(mouseButton: Int): Boolean = onClickAction?.invoke(mouseButton) ?: false
-
-    open fun getTooltipText(): String = ""
-
-    open fun drawTooltip(x: Int, y: Int, horizontalAlign: GuiGuideBook.HorizontalAlignment, verticalAlign: GuiGuideBook.VerticalAlignment){
-        getTooltipText().let { tooltipText ->
-            if(tooltipText.isNotBlank()){
-                GuiGuideBook.drawBoxedString(getTooltipText(), x, y, GuideBookConstants.Z_TOOLTIP, horizontalAlign, verticalAlign)
+    @SubscribeEvent
+    fun openContainer(event: PlayerContainerEvent.Open) {
+        val player = event.entityPlayer ?: return
+        MainProxy.runOnServer(player.world) {
+            Runnable {
+                val guiContainer = event.container
+                if (guiContainer is LPBaseContainer && guiContainer.module is PropertyModule) {
+                    val module = guiContainer.module
+                    propertyUpdaters.add(
+                        PropertyUpdater(player, module, module.properties)
+                    )
+                }
             }
         }
     }
+
+    @SubscribeEvent
+    fun closeContainer(event: PlayerContainerEvent.Close) {
+        val player = event.entityPlayer ?: return
+        MainProxy.runOnServer(player.world) {
+            Runnable {
+                propertyUpdaters.removeIf { propertyUpdater: PropertyUpdater ->
+                    propertyUpdater.removeForPlayer(event.entityPlayer)
+                }
+            }
+        }
+    }
+
 }

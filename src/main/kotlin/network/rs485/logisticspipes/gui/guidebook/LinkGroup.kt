@@ -58,7 +58,7 @@ interface LinkInteractable : MouseInteractable {
     /**
      * Update mouse state for any state changes.
      */
-    fun updateState(mouseX: Int, mouseY: Int, visibleArea: Rectangle)
+    fun updateState(mouseX: Float, mouseY: Float, visibleArea: Rectangle)
 
 }
 
@@ -69,22 +69,28 @@ class LinkGroup(private val link: Link) : LinkInteractable {
 
     fun addChild(linkWord: DrawableWord) = orderedChildren.add(linkWord)
 
-    override fun isHovering(mouseX: Int, mouseY: Int, visibleArea: Rectangle): Boolean =
-        orderedChildren.any { it.isHovering(mouseX, mouseY, visibleArea) }
+    override fun isMouseHovering(mouseX: Float, mouseY: Float): Boolean =
+            orderedChildren.any {
+                it.isMouseHovering(mouseX, mouseY)
+            }
 
-    override fun updateState(mouseX: Int, mouseY: Int, visibleArea: Rectangle) =
-        isHovering(mouseX, mouseY, visibleArea).let { hovered = it }
+    override fun updateState(mouseX: Float, mouseY: Float, visibleArea: Rectangle) =
+            isMouseHovering(mouseX, mouseY).let { hovered = it }
 
-    override fun mouseClicked(mouseX: Int, mouseY: Int, visibleArea: Rectangle, guideActionListener: GuiGuideBook.ActionListener) {
-        when (link) {
-            is PageLink -> guideActionListener.onPageLinkClick(link.page)
-            is WebLink -> guideActionListener.onWebLinkClick(link.url)
+    override fun mouseClicked(mouseX: Float, mouseY: Float, mouseButton: Int, guideActionListener: GuiGuideBook.ActionListener?): Boolean {
+        if (guideActionListener != null) {
+            when (link) {
+                is PageLink -> guideActionListener.onPageLinkClick(link.page)
+                is WebLink -> guideActionListener.onWebLinkClick(link.url)
+            }
+            return true
         }
+        return false
     }
 
     override fun updateColor(baseColor: Int): Int = MinecraftColor.BLUE.colorCode
 
     override fun updateFormat(baseFormat: Set<TextFormat>): Set<TextFormat> =
-        (if (hovered) baseFormat::minusElement else baseFormat::plusElement).invoke(TextFormat.Underline)
+            (if (hovered) baseFormat::minusElement else baseFormat::plusElement).invoke(TextFormat.Underline)
 
 }

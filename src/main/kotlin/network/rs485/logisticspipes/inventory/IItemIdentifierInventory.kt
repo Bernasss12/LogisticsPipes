@@ -36,14 +36,28 @@
  */
 package network.rs485.logisticspipes.inventory
 
+import logisticspipes.interfaces.IClientInformationProvider
 import logisticspipes.proxy.computers.interfaces.ILPCCTypeHolder
+import logisticspipes.utils.ISimpleInventoryEventHandler
 import logisticspipes.utils.item.ItemIdentifier
 import logisticspipes.utils.item.ItemIdentifierStack
+import logisticspipes.utils.tuples.Pair
 import net.minecraft.inventory.IInventory
 
-interface IItemIdentifierInventory : IInventory, ILPCCTypeHolder {
+interface IItemIdentifierInventory : IInventory, ILPCCTypeHolder, IClientInformationProvider {
     fun getIDStackInSlot(i: Int): ItemIdentifierStack?
     fun setInventorySlotContents(i: Int, itemstack: ItemIdentifierStack?)
     val itemsAndCount: Map<ItemIdentifier, Int>
     fun containsItem(item: ItemIdentifier?): Boolean
+    fun handleItemIdentifierList(_allItems: Collection<ItemIdentifierStack>)
+    fun addListener(listener: ISimpleInventoryEventHandler)
+    fun removeListener(listener: ISimpleInventoryEventHandler)
+    fun containsUndamagedItem(item: ItemIdentifier): Boolean
+    fun containsExcludeNBTItem(item: ItemIdentifier): Boolean
+    fun containsUndamagedExcludeNBTItem(item: ItemIdentifier): Boolean
+    fun itemCount(item: ItemIdentifier): Int
+    fun contents(): Iterable<Pair<ItemIdentifierStack, Int>>
+    fun compactFirst(size: Int)
+    fun recheckStackLimit()
+    fun clearInventorySlotContents(i: Int)
 }

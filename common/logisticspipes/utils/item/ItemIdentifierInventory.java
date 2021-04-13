@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 import javax.annotation.Nonnull;
 
 import net.minecraft.entity.item.EntityItem;
@@ -33,7 +32,6 @@ import net.minecraft.util.text.TextComponentString;
 import net.minecraft.world.World;
 
 import logisticspipes.LogisticsPipes;
-import logisticspipes.interfaces.IClientInformationProvider;
 import logisticspipes.interfaces.routing.ISaveState;
 import logisticspipes.proxy.MainProxy;
 import logisticspipes.utils.FluidIdentifier;
@@ -42,8 +40,8 @@ import logisticspipes.utils.tuples.Pair;
 import network.rs485.logisticspipes.inventory.IItemIdentifierInventory;
 import network.rs485.logisticspipes.util.items.ItemStackLoader;
 
-public class ItemIdentifierInventory implements ISaveState, Iterable<Pair<ItemIdentifierStack, Integer>>,
-		IClientInformationProvider, IItemIdentifierInventory {
+public class ItemIdentifierInventory
+		implements ISaveState, Iterable<Pair<ItemIdentifierStack, Integer>>, IItemIdentifierInventory {
 
 	private final Object[] ccTypeHolder = new Object[1];
 	private final ItemIdentifierStack[] _contents;
@@ -85,6 +83,21 @@ public class ItemIdentifierInventory implements ISaveState, Iterable<Pair<ItemId
 		_contentsNoNBTSet = new HashSet<>(copy._contentsNoNBTSet);
 		_contentsUndamagedNoNBTSet = new HashSet<>(copy._contentsUndamagedNoNBTSet);
 		isLiquidInventory = copy.isLiquidInventory;
+	}
+
+	public static void dropItems(World world, @Nonnull ItemStack stack, BlockPos pos) {
+		dropItems(world, stack, pos.getX(), pos.getY(), pos.getZ());
+	}
+
+	public static void dropItems(World world, @Nonnull ItemStack stack, int i, int j, int k) {
+		if (stack.isEmpty()) return;
+		float f1 = 0.7F;
+		double d = (world.rand.nextFloat() * f1) + (1.0F - f1) * 0.5D;
+		double d1 = (world.rand.nextFloat() * f1) + (1.0F - f1) * 0.5D;
+		double d2 = (world.rand.nextFloat() * f1) + (1.0F - f1) * 0.5D;
+		EntityItem entityitem = new EntityItem(world, i + d, j + d1, k + d2, stack);
+		entityitem.setPickupDelay(10);
+		world.spawnEntity(entityitem);
 	}
 
 	@Override
@@ -133,7 +146,8 @@ public class ItemIdentifierInventory implements ISaveState, Iterable<Pair<ItemId
 		} else {
 			if (isInvalidStack(itemstack)) {
 				if (LogisticsPipes.isDEBUG()) {
-					new UnsupportedOperationException("Not valid for this Inventory: (" + itemstack + ")").printStackTrace();
+					new UnsupportedOperationException("Not valid for this Inventory: (" + itemstack + ")")
+							.printStackTrace();
 				}
 				return;
 			}
@@ -149,7 +163,8 @@ public class ItemIdentifierInventory implements ISaveState, Iterable<Pair<ItemId
 		} else {
 			if (!isValidStack(itemstack)) {
 				if (LogisticsPipes.isDEBUG()) {
-					new UnsupportedOperationException("Not valid for this Inventory: (" + itemstack + ")").printStackTrace();
+					new UnsupportedOperationException("Not valid for this Inventory: (" + itemstack + ")")
+							.printStackTrace();
 				}
 				return;
 			}
@@ -200,7 +215,8 @@ public class ItemIdentifierInventory implements ISaveState, Iterable<Pair<ItemId
 					_contents[index] = itemstack;
 				}
 			} else {
-				LogisticsPipes.log.fatal("SimpleInventory: java.lang.ArrayIndexOutOfBoundsException: " + index + " of " + _contents.length);
+				LogisticsPipes.log.fatal("SimpleInventory: java.lang.ArrayIndexOutOfBoundsException: " + index + " of "
+						+ _contents.length);
 			}
 		}
 		updateContents();
@@ -241,28 +257,15 @@ public class ItemIdentifierInventory implements ISaveState, Iterable<Pair<ItemId
 		}
 	}
 
-	public static void dropItems(World world, @Nonnull ItemStack stack, BlockPos pos) {
-		dropItems(world, stack, pos.getX(), pos.getY(), pos.getZ());
-	}
-
-	public static void dropItems(World world, @Nonnull ItemStack stack, int i, int j, int k) {
-		if (stack.isEmpty()) return;
-		float f1 = 0.7F;
-		double d = (world.rand.nextFloat() * f1) + (1.0F - f1) * 0.5D;
-		double d1 = (world.rand.nextFloat() * f1) + (1.0F - f1) * 0.5D;
-		double d2 = (world.rand.nextFloat() * f1) + (1.0F - f1) * 0.5D;
-		EntityItem entityitem = new EntityItem(world, i + d, j + d1, k + d2, stack);
-		entityitem.setPickupDelay(10);
-		world.spawnEntity(entityitem);
-	}
-
-	public void addListener(ISimpleInventoryEventHandler listener) {
+	@Override
+	public void addListener(@Nonnull ISimpleInventoryEventHandler listener) {
 		if (!_listener.contains(listener)) {
 			_listener.add(listener);
 		}
 	}
 
-	public void removeListener(ISimpleInventoryEventHandler listener) {
+	@Override
+	public void removeListener(@Nonnull ISimpleInventoryEventHandler listener) {
 		_listener.remove(listener);
 	}
 
@@ -279,6 +282,7 @@ public class ItemIdentifierInventory implements ISaveState, Iterable<Pair<ItemId
 		return stackToTake;
 	}
 
+	@Override
 	public void handleItemIdentifierList(Collection<ItemIdentifierStack> _allItems) {
 		int i = 0;
 		for (ItemIdentifierStack stack : _allItems) {
@@ -374,12 +378,16 @@ public class ItemIdentifierInventory implements ISaveState, Iterable<Pair<ItemId
 
 			ItemIdentifier itemId = _content.getItem();
 			_contentsMap.merge(itemId, _content.getStackSize(), Integer::sum);
-			_contentsUndamagedSet.add(itemId.getUndamaged()); // add is cheaper than check then add; it just returns false if it is already there
-			_contentsNoNBTSet.add(itemId.getIgnoringNBT()); // add is cheaper than check then add; it just returns false if it is already there
-			_contentsUndamagedNoNBTSet.add(itemId.getIgnoringNBT().getUndamaged()); // add is cheaper than check then add; it just returns false if it is already there
+			_contentsUndamagedSet.add(itemId
+					.getUndamaged()); // add is cheaper than check then add; it just returns false if it is already there
+			_contentsNoNBTSet.add(itemId
+					.getIgnoringNBT()); // add is cheaper than check then add; it just returns false if it is already there
+			_contentsUndamagedNoNBTSet.add(itemId.getIgnoringNBT()
+					.getUndamaged()); // add is cheaper than check then add; it just returns false if it is already there
 		}
 	}
 
+	@Override
 	public int itemCount(@Nonnull final ItemIdentifier item) {
 		return _contentsMap.getOrDefault(item, 0);
 	}
@@ -395,18 +403,22 @@ public class ItemIdentifierInventory implements ISaveState, Iterable<Pair<ItemId
 		return _contentsMap.containsKey(item);
 	}
 
-	public boolean containsUndamagedItem(final ItemIdentifier item) {
+	@Override
+	public boolean containsUndamagedItem(@Nonnull final ItemIdentifier item) {
 		return _contentsUndamagedSet.contains(item);
 	}
 
-	public boolean containsExcludeNBTItem(final ItemIdentifier item) {
+	@Override
+	public boolean containsExcludeNBTItem(@Nonnull final ItemIdentifier item) {
 		return _contentsNoNBTSet.contains(item);
 	}
 
-	public boolean containsUndamagedExcludeNBTItem(final ItemIdentifier item) {
+	@Override
+	public boolean containsUndamagedExcludeNBTItem(@Nonnull final ItemIdentifier item) {
 		return _contentsUndamagedNoNBTSet.contains(item);
 	}
 
+	@Override
 	public boolean isEmpty() {
 		return _contentsMap.isEmpty();
 	}
@@ -432,11 +444,13 @@ public class ItemIdentifierInventory implements ISaveState, Iterable<Pair<ItemId
 	@Override
 	public void clear() {}
 
+	@Override
 	public void clearInventorySlotContents(int i) {
 		_contents[i] = null;
 		updateContents();
 	}
 
+	@Override
 	public void compactFirst(int size) {
 		// Compact
 		for (int i = 0; i < size; i++) {
@@ -473,6 +487,7 @@ public class ItemIdentifierInventory implements ISaveState, Iterable<Pair<ItemId
 		}
 	}
 
+	@Override
 	public void recheckStackLimit() {
 		for (ItemIdentifierStack _content : _contents) {
 			if (_content != null) {
@@ -543,18 +558,28 @@ public class ItemIdentifierInventory implements ISaveState, Iterable<Pair<ItemId
 
 	public NonNullList<ItemStack> toNonNullList() {
 		NonNullList<ItemStack> list = NonNullList.create();
-		list.addAll(0, StreamSupport.stream(this.spliterator(), false).filter(Objects::nonNull).map(it -> it.getValue1().makeNormalStack()).collect(Collectors.toSet()));
+		list.addAll(0, Arrays.stream(_contents)
+				.filter(Objects::nonNull)
+				.map(ItemIdentifierStack::makeNormalStack)
+				.collect(Collectors.toList()));
 		return list;
 	}
 
 	@Override
-	public @Nonnull List<String> getClientInformation() {
-		return Arrays.stream(_contents).map(String::valueOf).collect(Collectors.toList());
+	public @Nonnull
+	List<String> getClientInformation() {
+		return Arrays.stream(_contents).filter(Objects::nonNull).map(String::valueOf).collect(Collectors.toList());
 	}
 
 	@Override
 	public Object[] getTypeHolder() {
 		return ccTypeHolder;
+	}
+
+	@Nonnull
+	@Override
+	public Iterable<Pair<ItemIdentifierStack, Integer>> contents() {
+		return this;
 	}
 
 }
