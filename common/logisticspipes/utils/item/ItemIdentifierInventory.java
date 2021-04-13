@@ -444,11 +444,13 @@ public class ItemIdentifierInventory
 	@Override
 	public void clear() {}
 
+	@Override
 	public void clearInventorySlotContents(int i) {
 		_contents[i] = null;
 		updateContents();
 	}
 
+	@Override
 	public void compactFirst(int size) {
 		// Compact
 		for (int i = 0; i < size; i++) {
@@ -485,6 +487,7 @@ public class ItemIdentifierInventory
 		}
 	}
 
+	@Override
 	public void recheckStackLimit() {
 		for (ItemIdentifierStack _content : _contents) {
 			if (_content != null) {

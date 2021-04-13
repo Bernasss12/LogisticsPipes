@@ -14,7 +14,7 @@ import logisticspipes.LogisticsPipes;
 import logisticspipes.proxy.interfaces.ICraftingRecipeProvider;
 import logisticspipes.utils.CraftingUtil;
 import logisticspipes.utils.item.ItemIdentifier;
-import logisticspipes.utils.item.ItemIdentifierInventory;
+import network.rs485.logisticspipes.inventory.IItemIdentifierInventory;
 
 public class ImmibisCraftingTableMk2 implements ICraftingRecipeProvider {
 
@@ -33,7 +33,7 @@ public class ImmibisCraftingTableMk2 implements ICraftingRecipeProvider {
 	}
 
 	@Override
-	public boolean importRecipe(TileEntity tile, ItemIdentifierInventory inventory) {
+	public boolean importRecipe(TileEntity tile, IItemIdentifierInventory inventory) {
 		try {
 			if (tileAutoCraftingMk2.isInstance(tile)) {
 
