@@ -8,7 +8,6 @@
 package logisticspipes.utils.gui;
 
 import java.util.ArrayList;
-import java.util.BitSet;
 import java.util.List;
 import javax.annotation.Nonnull;
 
@@ -40,18 +39,18 @@ import logisticspipes.network.packets.gui.FuzzySlotSettingsPacket;
 import logisticspipes.pipes.PipeLogisticsChassis;
 import logisticspipes.pipes.upgrades.UpgradeManager;
 import logisticspipes.proxy.MainProxy;
-import logisticspipes.request.resources.DictResource;
 import logisticspipes.utils.FluidIdentifier;
 import logisticspipes.utils.MinecraftColor;
 import logisticspipes.utils.ReflectionHelper;
 import logisticspipes.utils.item.ItemIdentifier;
+import network.rs485.logisticspipes.property.IBitSet;
 
 public class DummyContainer extends Container {
 
 	@SideOnly(Side.CLIENT)
 	public LogisticsBaseGuiScreen guiHolderForJEI; // This is not set for every GUI. Only for the one needed by JEI.
 
-	public List<BitSet> inventoryFuzzySlotsContent = new ArrayList<>();
+	public List<IBitSet> inventoryFuzzySlotsContent = new ArrayList<>();
 	protected IInventory _playerInventory;
 	protected IInventory _dummyInventory;
 	protected IGuiOpenControler[] _controler;
@@ -170,12 +169,12 @@ public class DummyContainer extends Container {
 		return addSlotToContainer(new HandelableSlot(inventory, slotId, xCoord, yCoord, handler));
 	}
 
-	public Slot addFuzzyDummySlot(int slotId, int xCoord, int yCoord, DictResource dictResource) {
-		return addSlotToContainer(new FuzzyDummySlot(_dummyInventory, slotId, xCoord, yCoord, dictResource));
+	public Slot addFuzzyDummySlot(int slotId, int xCoord, int yCoord, IBitSet fuzzyFlags) {
+		return addSlotToContainer(new FuzzyDummySlot(_dummyInventory, slotId, xCoord, yCoord, fuzzyFlags));
 	}
 
-	public Slot addFuzzyUnmodifiableSlot(int slotId, IInventory inventory, int xCoord, int yCoord, DictResource dictResource) {
-		return addSlotToContainer(new FuzzyUnmodifiableSlot(inventory, slotId, xCoord, yCoord, dictResource));
+	public Slot addFuzzyUnmodifiableSlot(int slotId, IInventory inventory, int xCoord, int yCoord, IBitSet fuzzyFlags) {
+		return addSlotToContainer(new FuzzyUnmodifiableSlot(inventory, slotId, xCoord, yCoord, fuzzyFlags));
 	}
 
 	public Slot addUpgradeSlot(int slotId, ISlotUpgradeManager manager, int upgradeSlotId, int xCoord, int yCoord, ISlotCheck slotCheck) {
@@ -814,15 +813,23 @@ public class DummyContainer extends Container {
 		for (int i = 0; i < inventorySlots.size(); ++i) {
 			if (inventorySlots.get(i) instanceof IFuzzySlot) {
 				IFuzzySlot fuzzySlot = (IFuzzySlot) inventorySlots.get(i);
-				BitSet set = inventoryFuzzySlotsContent.get(i);
+				IBitSet set = inventoryFuzzySlotsContent.get(i);
 				if (set == null) {
-					set = fuzzySlot.getFuzzyFlags().getBitSet();
-					MainProxy.sendToPlayerList(PacketHandler.getPacket(FuzzySlotSettingsPacket.class).setSlotNumber(fuzzySlot.getSlotId()).setFlags(set), listeners.stream().filter(o -> o instanceof EntityPlayer).map(o -> (EntityPlayer) o));
+					set = fuzzySlot.getFuzzyFlags();
+					MainProxy.sendToPlayerList(
+							PacketHandler.getPacket(FuzzySlotSettingsPacket.class)
+									.setSlotNumber(fuzzySlot.getSlotId())
+									.setFlags(set.copyValue()),
+							listeners.stream().filter(o -> o instanceof EntityPlayer).map(o -> (EntityPlayer) o));
 					inventoryFuzzySlotsContent.set(i, set);
 				} else {
-					BitSet setB = fuzzySlot.getFuzzyFlags().getBitSet();
+					IBitSet setB = fuzzySlot.getFuzzyFlags();
 					if (!set.equals(setB)) {
-						MainProxy.sendToPlayerList(PacketHandler.getPacket(FuzzySlotSettingsPacket.class).setSlotNumber(fuzzySlot.getSlotId()).setFlags(setB), listeners.stream().filter(o -> o instanceof EntityPlayer).map(o -> (EntityPlayer) o));
+						MainProxy.sendToPlayerList(
+								PacketHandler.getPacket(FuzzySlotSettingsPacket.class)
+										.setSlotNumber(fuzzySlot.getSlotId())
+										.setFlags(setB.copyValue()),
+								listeners.stream().filter(o -> o instanceof EntityPlayer).map(o -> (EntityPlayer) o));
 						inventoryFuzzySlotsContent.set(i, setB);
 					}
 				}
@@ -836,7 +843,8 @@ public class DummyContainer extends Container {
 
 				for (IContainerListener crafter : listeners) {
 					boolean revert = false;
-					if (overrideMCAntiSend && crafter instanceof EntityPlayerMP && ((EntityPlayerMP) crafter).isChangingQuantityOnly) {
+					if (overrideMCAntiSend && crafter instanceof EntityPlayerMP
+							&& ((EntityPlayerMP) crafter).isChangingQuantityOnly) {
 						((EntityPlayerMP) crafter).isChangingQuantityOnly = false;
 						revert = true;
 					}
