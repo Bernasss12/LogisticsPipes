@@ -73,7 +73,6 @@ import network.rs485.logisticspipes.util.equalsWithNBT
 import network.rs485.logisticspipes.util.getExtractionMax
 import java.util.*
 import java.util.concurrent.TimeUnit
-import kotlin.collections.ArrayList
 import kotlin.math.pow
 
 data class ExtractorAsyncResult(
@@ -142,6 +141,8 @@ class AsyncExtractorModule(
             ?: CoreRoutedPipe.ItemSendMode.Normal
     private val connectedInventory: IInventoryUtil?
         get() = _service?.availableSneakyInventories(sneakyDirection)?.first()
+
+    override fun getLPName(): String = name
 
     @ExperimentalCoroutinesApi
     override fun tickSetup(): Channel<Pair<Int, ItemStack>>? =

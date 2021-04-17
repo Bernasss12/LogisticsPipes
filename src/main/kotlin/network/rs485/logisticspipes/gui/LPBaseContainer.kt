@@ -50,7 +50,6 @@ import network.rs485.logisticspipes.gui.guidebook.MouseInteractable
 import network.rs485.logisticspipes.gui.widget.GhostItemSlot
 import network.rs485.logisticspipes.gui.widget.GhostSlot
 import network.rs485.logisticspipes.gui.widget.LockedSlot
-import network.rs485.logisticspipes.module.PropertyModule
 import kotlin.math.min
 
 abstract class LPBaseContainer(val module: LogisticsModule?) : Container() {

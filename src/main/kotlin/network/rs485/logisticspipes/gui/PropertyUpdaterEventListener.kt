@@ -40,10 +40,7 @@ package network.rs485.logisticspipes.gui
 import logisticspipes.proxy.MainProxy
 import net.minecraftforge.event.entity.player.PlayerContainerEvent
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent
-import network.rs485.logisticspipes.module.PropertyModule
-import java.util.*
 
-@Suppress("unused")
 object PropertyUpdaterEventListener {
     private val propertyUpdaters: ArrayList<PropertyUpdater> = ArrayList()
 
@@ -53,7 +50,7 @@ object PropertyUpdaterEventListener {
         MainProxy.runOnServer(player.world) {
             Runnable {
                 val guiContainer = event.container
-                if (guiContainer is LPBaseContainer && guiContainer.module is PropertyModule) {
+                if (guiContainer is LPBaseContainer && guiContainer.module != null) {
                     val module = guiContainer.module
                     propertyUpdaters.add(
                         PropertyUpdater(player, module, module.properties)

@@ -38,7 +38,7 @@
 package network.rs485.logisticspipes.gui
 
 import logisticspipes.modules.ModuleProvider
-import logisticspipes.network.packets.module.PropertyModuleUpdate
+import logisticspipes.network.packets.module.ModulePropertiesUpdate
 import logisticspipes.proxy.MainProxy
 import logisticspipes.utils.string.StringUtils
 import net.minecraft.inventory.IInventory
@@ -156,7 +156,8 @@ class ProviderGui(playerInventory: IInventory, private val providerModule: Modul
         super.onGuiClosed()
         if (mc.player != null && propertyLayer.properties.isNotEmpty()) {
             // send update to server, when there are changed properties
-            MainProxy.sendPacketToServer(PropertyModuleUpdate.fromPropertyHolder(propertyLayer)
+            MainProxy.sendPacketToServer(ModulePropertiesUpdate
+                .fromPropertyHolder(propertyLayer)
                 .setModulePos(providerModule))
         }
     }
