@@ -8,6 +8,7 @@
 package logisticspipes.utils.gui;
 
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.List;
 import javax.annotation.Nonnull;
 
@@ -50,7 +51,7 @@ public class DummyContainer extends Container {
 	@SideOnly(Side.CLIENT)
 	public LogisticsBaseGuiScreen guiHolderForJEI; // This is not set for every GUI. Only for the one needed by JEI.
 
-	public List<IBitSet> inventoryFuzzySlotsContent = new ArrayList<>();
+	public List<BitSet> slotsFuzzyFlags = new ArrayList<>();
 	protected IInventory _playerInventory;
 	protected IInventory _dummyInventory;
 	protected IGuiOpenControler[] _controler;
@@ -813,25 +814,15 @@ public class DummyContainer extends Container {
 		for (int i = 0; i < inventorySlots.size(); ++i) {
 			if (inventorySlots.get(i) instanceof IFuzzySlot) {
 				IFuzzySlot fuzzySlot = (IFuzzySlot) inventorySlots.get(i);
-				IBitSet set = inventoryFuzzySlotsContent.get(i);
-				if (set == null) {
-					set = fuzzySlot.getFuzzyFlags();
+				BitSet slotFlags = fuzzySlot.getFuzzyFlags().copyValue();
+				BitSet savedFlags = slotsFuzzyFlags.get(i);
+				if (savedFlags == null || !savedFlags.equals(slotFlags)) {
 					MainProxy.sendToPlayerList(
 							PacketHandler.getPacket(FuzzySlotSettingsPacket.class)
 									.setSlotNumber(fuzzySlot.getSlotId())
-									.setFlags(set.copyValue()),
+									.setFlags(slotFlags),
 							listeners.stream().filter(o -> o instanceof EntityPlayer).map(o -> (EntityPlayer) o));
-					inventoryFuzzySlotsContent.set(i, set);
-				} else {
-					IBitSet setB = fuzzySlot.getFuzzyFlags();
-					if (!set.equals(setB)) {
-						MainProxy.sendToPlayerList(
-								PacketHandler.getPacket(FuzzySlotSettingsPacket.class)
-										.setSlotNumber(fuzzySlot.getSlotId())
-										.setFlags(setB.copyValue()),
-								listeners.stream().filter(o -> o instanceof EntityPlayer).map(o -> (EntityPlayer) o));
-						inventoryFuzzySlotsContent.set(i, setB);
-					}
+					slotsFuzzyFlags.set(i, slotFlags);
 				}
 			}
 			ItemStack itemstack = inventorySlots.get(i).getStack();
@@ -861,7 +852,7 @@ public class DummyContainer extends Container {
 	@Nonnull
 	@Override
 	protected Slot addSlotToContainer(@Nonnull Slot slotIn) {
-		this.inventoryFuzzySlotsContent.add(null);
+		this.slotsFuzzyFlags.add(null);
 		return super.addSlotToContainer(slotIn);
 	}
 }

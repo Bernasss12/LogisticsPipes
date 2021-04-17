@@ -466,7 +466,8 @@ public class ModuleCrafter extends PropertyModule
 	}
 
 	@Override
-	public void getAllItems(Map<ItemIdentifier, Integer> list, List<IFilter> filter) {}
+	public void getAllItems(Map<ItemIdentifier, Integer> list, List<IFilter> filter) {
+	}
 
 	@Override
 	@Nonnull
@@ -1082,8 +1083,7 @@ public class ModuleCrafter extends PropertyModule
 					SinkReply reply = LogisticsManager
 							.canSink(stackToSend, nextOrder.getDestination().getRouter(), null, true,
 									ItemIdentifier.get(stackToSend), null, true, false);
-					boolean defersend = (reply == null
-							|| reply.bufferMode != BufferMode.NONE
+					boolean defersend = (reply == null || reply.bufferMode != BufferMode.NONE
 							|| reply.maxNumberOfItems < 1);
 					IRoutedItem item = SimpleServiceLocator.routedItemHelper.createNewTravelItem(stackToSend);
 					item.setDestination(nextOrder.getDestination().getRouter().getSimpleID());

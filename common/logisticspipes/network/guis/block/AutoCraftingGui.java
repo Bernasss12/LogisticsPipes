@@ -29,7 +29,7 @@ public class AutoCraftingGui extends CoordinatesGuiProvider {
 	public Object getClientGui(EntityPlayer player) {
 		LogisticsCraftingTableTileEntity tile = getTileAs(player.world, LogisticsCraftingTableTileEntity.class);
 		if (tile.isFuzzy()) {
-			tile.fuzzyFlags.setFrom(fuzzyFlags);
+			tile.fuzzyFlags.replaceWith(fuzzyFlags);
 		}
 		tile.targetType = targetType;
 		return new GuiLogisticsCraftingTable(player, tile);

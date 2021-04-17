@@ -49,7 +49,7 @@ class FuzzySlotAccess(
 
     override fun mergeSlots(intoSlot: Int, fromSlot: Int) {
         slotAccess.mergeSlots(intoSlot, fromSlot)
-        bitsForSlot(intoSlot).setFrom(bitsForSlot(fromSlot))
+        bitsForSlot(intoSlot).replaceWith(bitsForSlot(fromSlot))
         bitsForSlot(fromSlot).clear()
     }
 

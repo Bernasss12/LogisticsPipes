@@ -41,15 +41,21 @@ import net.minecraft.nbt.NBTTagCompound
 import java.util.*
 
 interface IBitSet {
-    val size: Int
     operator fun get(bit: Int): Boolean
     operator fun set(bit: Int, value: Boolean)
     fun flip(bit: Int)
     fun nextSetBit(idx: Int): Int
-    fun setFrom(other: BitSet)
-    fun setFrom(other: IBitSet)
+    fun replaceWith(other: BitSet)
+    fun replaceWith(other: IBitSet)
     fun copyValue(): BitSet
     fun clear()
+
+    fun sequence(): Sequence<Int> {
+        var idx = nextSetBit(0)
+        return generateSequence {
+            idx.takeUnless { it == -1 }?.also { idx = nextSetBit(it + 1) }
+        }
+    }
 }
 
 class BitSetProperty(private val bitset: BitSet, override val tagKey: String) : IBitSet, Property<BitSet> {
@@ -58,35 +64,28 @@ class BitSetProperty(private val bitset: BitSet, override val tagKey: String) : 
 
     override fun copyValue(): BitSet = bitset.clone() as BitSet
 
-    override val size: Int
-        get() = bitset.size()
-
     override fun clear() = bitset.clear()
 
-    fun copyValue(startIdx: Int, endIdx: Int): BitSet = bitset.get(startIdx, endIdx)
+    fun copyValue(startIdx: Int, endIdx: Int): BitSet = bitset.get(startIdx, endIdx + 1)
 
     override fun copyProperty(): BitSetProperty = BitSetProperty(copyValue(), tagKey)
 
-    fun replaceWith(other: BitSet) = other.takeUnless { it == bitset }
-        ?.let { bitset.clear(); bitset.or(it) }
-        ?.alsoIChanged()
-
-    fun replaceWith(other: BitSetProperty) = other.takeUnless { it === this }
-        ?.let { bitset.clear(); bitset.or(other.bitset) }
-        ?.alsoIChanged()
-
-    override fun setFrom(other: BitSet) {
-        if (other.size() == 0) return
-        bitset.clear(0, other.size() - 1)
-        bitset.or(other)
-        iChanged()
+    override fun replaceWith(other: BitSet) {
+        other.takeUnless { it == bitset }
+            ?.let { bitset.clear(); bitset.or(it) }
+            ?.alsoIChanged()
     }
 
-    override fun setFrom(other: IBitSet) {
-        if (other.size == 0) return
-        bitset.clear(0, other.size - 1)
-        bitset.or(other.copyValue())
-        iChanged()
+    override fun replaceWith(other: IBitSet) {
+        other.takeUnless { it == bitset }
+            ?.let { bitset.clear(); bitset.or(it.copyValue()) }
+            ?.alsoIChanged()
+    }
+
+    fun replaceWith(other: BitSetProperty) {
+        other.takeUnless { it === this }
+            ?.let { bitset.clear(); bitset.or(other.bitset) }
+            ?.alsoIChanged()
     }
 
     override fun readFromNBT(tag: NBTTagCompound) {
@@ -120,7 +119,7 @@ class BitSetProperty(private val bitset: BitSet, override val tagKey: String) : 
 
     inner class PartialBitSet(private val indices: IntRange) : IBitSet {
 
-        override val size: Int
+        val size: Int
             get() = (indices.last - indices.first) + 1
 
         init {
@@ -139,29 +138,30 @@ class BitSetProperty(private val bitset: BitSet, override val tagKey: String) : 
         override fun get(bit: Int): Boolean = this@BitSetProperty[indices.first + rangeCheck(bit)]
         override fun set(bit: Int, value: Boolean) = this@BitSetProperty.set(indices.first + rangeCheck(bit), value)
         override fun flip(bit: Int) = this@BitSetProperty.flip(indices.first + rangeCheck(bit))
-        override fun nextSetBit(idx: Int): Int = this@BitSetProperty.nextSetBit(indices.first + rangeCheck(idx))
-        override fun clear() = this@BitSetProperty.bitset.clear(indices.first, indices.last).alsoIChanged()
-
-        override fun setFrom(other: BitSet) {
-            rangeCheck(other.size() - 1)
-            bitset.clear(indices.first, indices.last)
-            other.stream().forEach { bit -> bitset.set(indices.first + bit) }
-            iChanged()
-        }
-
-        override fun setFrom(other: IBitSet) {
-            rangeCheck(other.size - 1)
-            bitset.clear(indices.first, indices.last)
-            var idx = other.nextSetBit(0)
-            val setBits = generateSequence {
-                idx.takeUnless { it == -1 }
-                    ?.also { idx = other.nextSetBit(idx) }
-            }
-            setBits.forEach { bit -> bitset.set(indices.first + bit) }
-            iChanged()
-        }
-
+        override fun clear() = this@BitSetProperty.bitset.clear(indices.first, indices.last + 1).alsoIChanged()
         override fun copyValue(): BitSet = this@BitSetProperty.copyValue(indices.first, indices.last)
+
+        override fun nextSetBit(idx: Int): Int {
+            if (idx >= size) return -1
+            return this@BitSetProperty.nextSetBit(indices.first + rangeCheck(idx))
+                .takeUnless { it == -1 || it > indices.last }
+                ?.let { it - indices.first }
+                ?: -1
+        }
+
+        override fun replaceWith(other: BitSet) {
+            bitset.clear(indices.first, indices.last + 1)
+            other.stream().forEach { bit -> (indices.first + bit).takeIf { it <= indices.last }?.also { bitset.set(it) } }
+            iChanged()
+        }
+
+        override fun replaceWith(other: IBitSet) {
+            bitset.clear(indices.first, indices.last + 1)
+            other.sequence().map { bit -> indices.first + bit }
+                .takeWhile { bit -> bit <= indices.last }
+                .forEach { bit -> bitset.set(bit) }
+            iChanged()
+        }
 
         override fun equals(other: Any?): Boolean = (other as? IBitSet)?.copyValue()?.equals(copyValue()) ?: false
         override fun hashCode(): Int = copyValue().hashCode()
