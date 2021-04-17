@@ -57,8 +57,11 @@ import kotlin.math.min
 
 class StorageDrawersProxyImpl : SpecialInventoryHandler.Factory {
 
-    @CapabilityInject(IDrawerGroup::class)
-    val drawerGroupCapability: Capability<IDrawerGroup>? = null
+    companion object {
+        @JvmStatic
+        @CapabilityInject(IDrawerGroup::class)
+        val drawerGroupCapability: Capability<IDrawerGroup>? = null
+    }
 
     override fun isType(tile: TileEntity, dir: EnumFacing?): Boolean = tile.hasCapability(drawerGroupCapability!!, dir)
 
