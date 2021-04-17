@@ -38,6 +38,7 @@ import logisticspipes.utils.FluidIdentifier;
 import logisticspipes.utils.ISimpleInventoryEventHandler;
 import logisticspipes.utils.tuples.Pair;
 import network.rs485.logisticspipes.inventory.IItemIdentifierInventory;
+import network.rs485.logisticspipes.inventory.SlotAccess;
 import network.rs485.logisticspipes.util.items.ItemStackLoader;
 
 public class ItemIdentifierInventory
@@ -55,6 +56,31 @@ public class ItemIdentifierInventory
 	private final boolean isLiquidInventory;
 
 	private final LinkedList<ISimpleInventoryEventHandler> _listener = new LinkedList<>();
+
+	public final SlotAccess slotAccess = new SlotAccess() {
+
+		@Override
+		public void mergeSlots(int intoSlot, int fromSlot) {
+			if (_contents[intoSlot] == null) {
+				_contents[intoSlot] = _contents[fromSlot];
+			} else {
+				_contents[intoSlot].setStackSize(_contents[intoSlot].getStackSize() + _contents[fromSlot].getStackSize());
+			}
+			_contents[fromSlot] = null;
+			updateContents();
+		}
+
+		@Override
+		public boolean canMerge(int intoSlot, int fromSlot) {
+			return _contents[intoSlot].getItem().equals(_contents[fromSlot].getItem());
+		}
+
+		@Override
+		public boolean isSlotEmpty(int idx) {
+			return _contents[idx] == null;
+		}
+
+	};
 
 	public ItemIdentifierInventory(int size, String name, int stackLimit, boolean liquidInv) {
 		_contents = new ItemIdentifierStack[size];
@@ -451,43 +477,6 @@ public class ItemIdentifierInventory
 	}
 
 	@Override
-	public void compactFirst(int size) {
-		// Compact
-		for (int i = 0; i < size; i++) {
-			final ItemIdentifierStack stackInSlot = getIDStackInSlot(i);
-			if (stackInSlot == null) {
-				continue;
-			}
-			final ItemIdentifier itemInSlot = stackInSlot.getItem();
-			for (int j = i + 1; j < size; j++) {
-				final ItemIdentifierStack stackInOtherSlot = getIDStackInSlot(j);
-				if (stackInOtherSlot == null) {
-					continue;
-				}
-				if (itemInSlot.equals(stackInOtherSlot.getItem())) {
-					stackInSlot.setStackSize(stackInSlot.getStackSize() + stackInOtherSlot.getStackSize());
-					clearInventorySlotContents(j);
-				}
-			}
-			setInventorySlotContents(i, stackInSlot);
-		}
-
-		for (int i = 0; i < size; i++) {
-			if (!getStackInSlot(i).isEmpty()) {
-				continue;
-			}
-			for (int j = i + 1; j < size; j++) {
-				if (getStackInSlot(j).isEmpty()) {
-					continue;
-				}
-				setInventorySlotContents(i, getStackInSlot(j));
-				clearInventorySlotContents(j);
-				break;
-			}
-		}
-	}
-
-	@Override
 	public void recheckStackLimit() {
 		for (ItemIdentifierStack _content : _contents) {
 			if (_content != null) {
@@ -580,6 +569,12 @@ public class ItemIdentifierInventory
 	@Override
 	public Iterable<Pair<ItemIdentifierStack, Integer>> contents() {
 		return this;
+	}
+
+	@Nonnull
+	@Override
+	public SlotAccess getSlotAccess() {
+		return slotAccess;
 	}
 
 }

@@ -36,7 +36,7 @@ apply plugin: 'net.minecraftforge.gradle'
 
 archivesBaseName = "logisticspipes"
 group = "network.rs485"
-version = "0.10.3.96+fbos+props+gui"
+version = "0.10.3.97+fbos+props+gui"
 ext.vendor = "unknown"
 ext.target = "Forge $forge_version"
 

@@ -34,30 +34,26 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
+
 package network.rs485.logisticspipes.inventory
 
-import logisticspipes.interfaces.IClientInformationProvider
-import logisticspipes.proxy.computers.interfaces.ILPCCTypeHolder
-import logisticspipes.utils.ISimpleInventoryEventHandler
-import logisticspipes.utils.item.ItemIdentifier
-import logisticspipes.utils.item.ItemIdentifierStack
-import logisticspipes.utils.tuples.Pair
-import net.minecraft.inventory.IInventory
+interface SlotAccess {
 
-interface IItemIdentifierInventory : IInventory, ILPCCTypeHolder, IClientInformationProvider {
-    val itemsAndCount: Map<ItemIdentifier, Int>
-    val slotAccess: SlotAccess
-    fun getIDStackInSlot(i: Int): ItemIdentifierStack?
-    fun setInventorySlotContents(i: Int, itemstack: ItemIdentifierStack?)
-    fun containsItem(item: ItemIdentifier?): Boolean
-    fun handleItemIdentifierList(_allItems: Collection<ItemIdentifierStack>)
-    fun addListener(listener: ISimpleInventoryEventHandler)
-    fun removeListener(listener: ISimpleInventoryEventHandler)
-    fun containsUndamagedItem(item: ItemIdentifier): Boolean
-    fun containsExcludeNBTItem(item: ItemIdentifier): Boolean
-    fun containsUndamagedExcludeNBTItem(item: ItemIdentifier): Boolean
-    fun itemCount(item: ItemIdentifier): Int
-    fun contents(): Iterable<Pair<ItemIdentifierStack, Int>>
-    fun recheckStackLimit()
-    fun clearInventorySlotContents(i: Int)
+    @JvmDefault
+    fun compactFirst(size: Int) {
+        for (firstSlot in 0 until size) {
+            for (secondSlot in firstSlot + 1 until size) {
+                if (!isSlotEmpty(secondSlot) && (isSlotEmpty(firstSlot) || canMerge(firstSlot, secondSlot))) {
+                    mergeSlots(firstSlot, secondSlot)
+                }
+            }
+        }
+    }
+
+    fun mergeSlots(intoSlot: Int, fromSlot: Int)
+
+    fun canMerge(intoSlot: Int, fromSlot: Int): Boolean
+
+    fun isSlotEmpty(idx: Int): Boolean
+
 }

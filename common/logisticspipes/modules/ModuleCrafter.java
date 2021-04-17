@@ -1344,7 +1344,7 @@ public class ModuleCrafter extends PropertyModule
 		for (int i = 10; i < cleanupInventory.getSizeInventory(); i++) {
 			cleanupInventory.setInventorySlotContents(i, ItemStack.EMPTY);
 		}
-		cleanupInventory.compactFirst(10);
+		cleanupInventory.getSlotAccess().compactFirst(10);
 		cleanupInventory.recheckStackLimit();
 		cleanupModeIsExclude.setValue(false);
 	}
