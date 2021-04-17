@@ -140,7 +140,7 @@ class AsyncExtractorModule(
         }
             ?: CoreRoutedPipe.ItemSendMode.Normal
     private val connectedInventory: IInventoryUtil?
-        get() = _service?.availableSneakyInventories(sneakyDirection)?.first()
+        get() = _service?.availableSneakyInventories(sneakyDirection)?.firstOrNull()
 
     override fun getLPName(): String = name
 
