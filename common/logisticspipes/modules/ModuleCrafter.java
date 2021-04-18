@@ -63,10 +63,7 @@ import logisticspipes.network.packets.cpipe.CPipeSatelliteImportBack;
 import logisticspipes.network.packets.cpipe.CraftingPipeOpenConnectedGuiPacket;
 import logisticspipes.network.packets.hud.HUDStartModuleWatchingPacket;
 import logisticspipes.network.packets.hud.HUDStopModuleWatchingPacket;
-import logisticspipes.network.packets.pipe.CraftingPipePriorityDownPacket;
-import logisticspipes.network.packets.pipe.CraftingPipePriorityUpPacket;
 import logisticspipes.network.packets.pipe.CraftingPipeUpdatePacket;
-import logisticspipes.network.packets.pipe.CraftingPriority;
 import logisticspipes.network.packets.pipe.FluidCraftingAmount;
 import logisticspipes.pipefxhandlers.Particles;
 import logisticspipes.pipes.PipeFluidSatellite;
@@ -161,7 +158,9 @@ public class ModuleCrafter extends LogisticsModule
 	protected final PlayerCollectionList guiWatcher = new PlayerCollectionList();
 
 	public ClientSideSatelliteNames clientSideSatelliteNames = new ClientSideSatelliteNames();
+
 	protected SinkReply _sinkReply;
+
 	@Nullable
 	private IRequestItems _invRequester;
 	private WeakReference<TileEntity> lastAccessedCrafter = new WeakReference<>(null);
@@ -518,16 +517,12 @@ public class ModuleCrafter extends LogisticsModule
 		}
 		IReqCraftingTemplate template = null;
 		if (getUpgradeManager().isFuzzyUpgrade() && outputFuzzy().nextSetBit(0) != -1) {
-			if (toCraft instanceof DictResource) {
-				for (ItemIdentifierStack craftable : stack) {
-					DictResource dict = new DictResource(craftable, null);
-					dict.loadFromBitSet(outputFuzzy().copyValue());
-					if (toCraft.matches(craftable.getItem(), IResource.MatchSettings.NORMAL) && dict
-							.matches(((DictResource) toCraft).getItem(), IResource.MatchSettings.NORMAL) && dict
-							.getBitSet().equals(((DictResource) toCraft).getBitSet())) {
-						template = new DictCraftingTemplate(dict, this, priority.getValue());
-						break;
-					}
+			for (ItemIdentifierStack craftable : stack) {
+				DictResource dict = new DictResource(craftable, null);
+				dict.loadFromBitSet(outputFuzzy().copyValue());
+				if (toCraft.matches(dict, IResource.MatchSettings.NORMAL)) {
+					template = new DictCraftingTemplate(dict, this, priority.getValue());
+					break;
 				}
 			}
 		} else {
@@ -547,8 +542,8 @@ public class ModuleCrafter extends LogisticsModule
 			target[i] = this;
 		}
 
-		boolean hasSatellite = isSatelliteConnected();
-		if (!hasSatellite) {
+		if (!isSatelliteConnected()) {
+			// has a satellite configured and that one is unreachable
 			return null;
 		}
 		if (!getUpgradeManager().isAdvancedSatelliteCrafter()) {
@@ -842,30 +837,6 @@ public class ModuleCrafter extends LogisticsModule
 				MainProxy.sendPacketToPlayer(packet, player);
 			}
 			MainProxy.sendPacketToAllWatchingChunk(this, packet);
-		}
-	}
-
-	public void priorityUp(EntityPlayer player) {
-		priority.increase(1);
-		if (MainProxy.isClient(player.world)) {
-			MainProxy
-					.sendPacketToServer(PacketHandler.getPacket(CraftingPipePriorityUpPacket.class).setModulePos(this));
-		} else if (MainProxy.isServer(player.world)) {
-			MainProxy.sendPacketToPlayer(
-					PacketHandler.getPacket(CraftingPriority.class).setInteger(priority.getValue()).setModulePos(this),
-					player);
-		}
-	}
-
-	public void priorityDown(EntityPlayer player) {
-		priority.increase(-1);
-		if (MainProxy.isClient(player.world)) {
-			MainProxy.sendPacketToServer(
-					PacketHandler.getPacket(CraftingPipePriorityDownPacket.class).setModulePos(this));
-		} else if (MainProxy.isServer(player.world)) {
-			MainProxy.sendPacketToPlayer(
-					PacketHandler.getPacket(CraftingPriority.class).setInteger(priority.getValue()).setModulePos(this),
-					player);
 		}
 	}
 
