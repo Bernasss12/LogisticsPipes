@@ -40,7 +40,6 @@ package network.rs485.logisticspipes.gui
 import logisticspipes.modules.ModuleProvider
 import logisticspipes.network.packets.module.ModulePropertiesUpdate
 import logisticspipes.proxy.MainProxy
-import logisticspipes.utils.string.StringUtils
 import net.minecraft.inventory.IInventory
 import net.minecraft.item.ItemStack
 import network.rs485.logisticspipes.gui.widget.*
@@ -48,6 +47,7 @@ import network.rs485.logisticspipes.inventory.ProviderMode
 import network.rs485.logisticspipes.property.BooleanProperty
 import network.rs485.logisticspipes.property.EnumProperty
 import network.rs485.logisticspipes.property.PropertyLayer
+import network.rs485.logisticspipes.util.TextUtil
 
 // TODO create different buttons.
 class ProviderGui(playerInventory: IInventory, private val providerModule: ModuleProvider, lockedStack: ItemStack) :
@@ -80,7 +80,7 @@ class ProviderGui(playerInventory: IInventory, private val providerModule: Modul
         xSize = FullSize(6),
         textColor = helper.TEXT_DARK,
         textGetter = {
-            "${StringUtils.translate("${prefix}ExcessInventory")} ${providerModeOverlay.get().extractionModeString}"
+            "${TextUtil.translate("${prefix}ExcessInventory")} ${providerModeOverlay.get().extractionModeString}"
         })
         .setExtendable(true, helper.BACKGROUND_LIGHT)
     private val extractionModeButton: TextButton = TextButton(
@@ -90,7 +90,7 @@ class ProviderGui(playerInventory: IInventory, private val providerModule: Modul
         xSize = AbsoluteSize(50),
         ySize = AbsoluteSize(20),
         textGetter = {
-            StringUtils.translate("${prefix}Switch")
+            TextUtil.translate("${prefix}Switch")
         },
         onClickAction = { mouseButton ->
             if (mouseButton == 0) {
@@ -108,9 +108,9 @@ class ProviderGui(playerInventory: IInventory, private val providerModule: Modul
         ySize = AbsoluteSize(20),
         textGetter = {
             if (exclusionFilterOverlay.get()) {
-                StringUtils.translate("${prefix}Include")
+                TextUtil.translate("${prefix}Include")
             } else {
-                StringUtils.translate("${prefix}Exclude")
+                TextUtil.translate("${prefix}Exclude")
             }
         },
         onClickAction = { mouseButton ->

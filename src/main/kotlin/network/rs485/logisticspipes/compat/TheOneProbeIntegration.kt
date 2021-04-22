@@ -45,7 +45,6 @@ import logisticspipes.pipes.basic.CoreRoutedPipe
 import logisticspipes.pipes.basic.CoreUnroutedPipe
 import logisticspipes.pipes.basic.LogisticsBlockGenericPipe
 import logisticspipes.pipes.unrouted.PipeItemsBasicTransport
-import logisticspipes.utils.string.StringUtils
 import mcjty.theoneprobe.api.*
 import net.minecraft.block.state.IBlockState
 import net.minecraft.client.resources.I18n
@@ -54,8 +53,7 @@ import net.minecraft.item.ItemStack
 import net.minecraft.world.World
 import network.rs485.logisticspipes.module.AsyncAdvancedExtractor
 import network.rs485.logisticspipes.module.AsyncExtractorModule
-import network.rs485.logisticspipes.module.AsyncQuicksortModule
-import java.util.*
+import network.rs485.logisticspipes.util.TextUtil
 import java.util.function.Function
 
 class TheOneProbeIntegration : Function<ITheOneProbe, Void?> {
@@ -259,7 +257,7 @@ class TheOneProbeIntegration : Function<ITheOneProbe, Void?> {
         private fun addProviderModuleInfo(module: ModuleProvider, probeInfo: IProbeInfo, mode: ProbeMode) {
             if(mode == ProbeMode.EXTENDED){
                 if(!module.filterInventory.isEmpty){
-                    val modeString = StringUtils.translate(prefix + if(module.isExclusionFilter.value) {
+                    val modeString = TextUtil.translate(prefix + if(module.isExclusionFilter.value) {
                         "general_exclude"
                     } else {
                         "general_include"
